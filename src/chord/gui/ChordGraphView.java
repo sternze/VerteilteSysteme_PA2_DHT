@@ -118,11 +118,11 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 					g.removeEdge(node.getIdentifier() + "successor");
 					g.addEdge(node.getIdentifier() + "successor", node.getIdentifier(), node.getSuccessor().getIdentifier());
 				}
-				
+				/*
 				if (node.getPredecessor() != null && g.containsVertex(node.getPredecessor().getIdentifier())) {
 					g.removeEdge(node.getIdentifier() + "predecessor");
 					g.addEdge(node.getIdentifier() + "predecessor", node.getIdentifier(), node.getPredecessor().getIdentifier());
-				}
+				}*/
 			}
 		}
 		

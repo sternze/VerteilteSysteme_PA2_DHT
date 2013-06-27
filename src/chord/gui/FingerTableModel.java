@@ -21,7 +21,7 @@ public class FingerTableModel extends AbstractTableModel {
 
 	@Override
 	public int getColumnCount() {
-		return 7;
+		return 5;
 	}
 	
 	public String getColumnName(int col) {

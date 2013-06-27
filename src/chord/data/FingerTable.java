@@ -20,7 +20,7 @@ public class FingerTable implements Serializable {
 		}
 	}
 	
-	public FingerTableEntry get(int index) {
+	public synchronized FingerTableEntry get(int index) {
 		return this.fingerTable.get(index);
 	}
 	

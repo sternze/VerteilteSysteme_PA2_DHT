@@ -85,6 +85,6 @@ public class Node implements Serializable {
 			e.printStackTrace();
 		}
 		
-		return chordID;
+		return chordID % keySize;
 	}
 }

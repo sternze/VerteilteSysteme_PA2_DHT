@@ -42,7 +42,7 @@ public class ChordUtils {
 	
 	/**
 	 * Check to see if one identifier lies between two others on a Chord, excluding
-	 * the upper bound.
+	 * the upper and lower bound.
 	 * 
 	 * @param number The identifier to check.
 	 * @param lower The lower identifier.

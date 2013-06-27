@@ -67,7 +67,6 @@ public class ChordNode extends Node implements Serializable {
 	
 	public Node findPredecessor(long id) {
 		Node node = this;
-		
 		while (!ChordUtils.inRangeLeftOpenIntervall(id, node.getIdentifier(), node.getSuccessor().getIdentifier())) {
 			try {
 				IMyChord contact = (IMyChord) Naming.lookup("rmi://" + node.getIp() + ":" + node.getPort() + "/" + node.getServiceName());

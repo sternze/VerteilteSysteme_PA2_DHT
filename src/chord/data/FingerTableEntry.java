@@ -15,8 +15,6 @@ public class FingerTableEntry implements Serializable {
 	private long intervalUpperBound;
 	private Node owner;
 	private Node node;
-	private Node successor;
-	private Node predecessor;
 	
 	public FingerTableEntry(int index, Node owner) { 
 		this.index = index;
@@ -54,10 +52,8 @@ public class FingerTableEntry implements Serializable {
 		return node;
 	}
 	
-	public void setNode(Node node) {
+	public synchronized void setNode(Node node) {
 		this.node = node;
-		this.successor = this.node.getSuccessor();
-		this.predecessor = this.node.getPredecessor();
 	}
 	
 	public Node getOwner() {
@@ -65,10 +61,10 @@ public class FingerTableEntry implements Serializable {
 	}
 
 	public Node getSuccessor() {
-		return successor;
+		return this.node.getSuccessor();
 	}
 
 	public Node getPredecessor() {
-		return predecessor;
+		return this.node.getSuccessor();
 	}
 }

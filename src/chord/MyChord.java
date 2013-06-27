@@ -97,13 +97,13 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 					
 					while (true) {
 						me.fixFingers();
-						/*
+						
 						try {
-							Thread.sleep(100);
+							Thread.sleep(2);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
-						}*/
+						}
 					}
 				}
 			};
