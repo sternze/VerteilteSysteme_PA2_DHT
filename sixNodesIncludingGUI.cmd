@@ -5,9 +5,14 @@ call "ant compile jar"
 
 set countfiles=6
 
-set MyIp=143.205.197.196
-set GuiIp=143.205.197.196
-set ConnectingNodeIp=143.205.197.196
+for /f "usebackq tokens=13 delims=: " %%i in ('ipconfig ^| find "IPv4 Address" ') do set MyIp=%%i
+set GuiIp=%MyIp%
+set ConnectingNodeIp=%MyIp%
+
+rem the command 'rem' is just for commenting lines out
+
+rem set GuiIp=143.205.197.196
+rem set ConnectingNodeIp=143.205.197.196
 
 start cmd /C "ant runGui -DMyIp=%MyIp%"
 
