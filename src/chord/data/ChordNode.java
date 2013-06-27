@@ -1,9 +1,6 @@
 package chord.data;
 
 import java.io.Serializable;
-import java.net.MalformedURLException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.Date;
 
@@ -59,19 +56,20 @@ public class ChordNode extends Node implements Serializable {
 		System.out.println(new Date() + " joining node: " + nodeToJoin.getIdentifier());
 		
 		setPredecessor(null);
-
+	
 		try {
-			IMyChord contact = (IMyChord) Naming.lookup("rmi://" + nodeToJoin.getIp() + ":" + nodeToJoin.getPort() + "/" + nodeToJoin.getServiceName());
-        	
+			IMyChord contact = ContactManager.get(nodeToJoin);
+			
 			Node node = contact.findSuccessor(getIdentifier());
+			
 			setSuccessor(node);
 			
 			System.out.println(new Date() + " my successor is: " + node.getIdentifier());
-			
-        	contact = null;
-		} catch (MalformedURLException | RemoteException | NotBoundException e) { 
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
 	}
 	
 	public Node findSuccessor(long id) {
@@ -86,12 +84,12 @@ public class ChordNode extends Node implements Serializable {
 				node = closestPrecedingFinger(id);
 			} else {
 				try {
-					IMyChord contact = (IMyChord) Naming.lookup("rmi://" + node.getIp() + ":" + node.getPort() + "/" + node.getServiceName());
-		        	
+					IMyChord contact = ContactManager.get(node);
+					
 					node = contact.closestPrecedingFinger(id);
 					
 		        	contact = null;
-				} catch (MalformedURLException | RemoteException | NotBoundException e) { 
+				} catch (RemoteException e) { 
 					e.printStackTrace();
 				}
 			}
@@ -123,12 +121,12 @@ public class ChordNode extends Node implements Serializable {
 			Node successor = getSuccessor();
 			
 			try {
-				IMyChord contact = (IMyChord) Naming.lookup("rmi://" + successor.getIp() + ":" + successor.getPort() + "/" + successor.getServiceName());
+				IMyChord contact = ContactManager.get(successor);
 	        	
 				setSuccessor(contact.notify(this));
 	      
 	        	contact = null;
-			} catch (MalformedURLException | RemoteException | NotBoundException e) { 
+			} catch (RemoteException e) { 
 				e.printStackTrace();
 			}
 		}
@@ -141,13 +139,13 @@ public class ChordNode extends Node implements Serializable {
 			setPredecessor(node);
 		} else if (ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getPredecessor().getIdentifier(), getIdentifier())) {
 			try {
-				IMyChord contact = (IMyChord) Naming.lookup("rmi://" + getPredecessor().getIp() + ":" + getPredecessor().getPort() + "/" + getPredecessor().getServiceName());
+				IMyChord contact = ContactManager.get(getPredecessor());
 	        	
 				setPredecessor(node);
 				contact.notifyPredecessor(node);
 	      
 	        	contact = null;
-			} catch (MalformedURLException | RemoteException | NotBoundException e) { 
+			} catch (RemoteException e) { 
 				e.printStackTrace();
 			}
 		}

@@ -171,7 +171,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 			
 			stabilize.start();
 			fixFingers.start();
-			printStatus.start();
+			//printStatus.start();
 			sendStatus.start();
 			
 		} catch (RemoteException e) {
