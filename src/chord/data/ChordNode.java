@@ -34,6 +34,20 @@ public class ChordNode extends Node implements Serializable {
 		this.fingerTable = new FingerTable(this);
 	}
 	
+	public ChordNode(long manualId, String ip, int port, String serviceName, int keySize) {
+		super(ip, port, serviceName, keySize);
+		setIdentifier(manualId);
+		
+		System.out.println(new Date() + " created me {");
+		System.out.println(new Date() + " \t IP: " + getIp());
+		System.out.println(new Date() + " \t Port: " + getPort());
+		System.out.println(new Date() + " \t ServiceName: " + getServiceName());
+		System.out.println(new Date() + " \t ChordIdentifier: " + getIdentifier());
+		System.out.println(new Date() + " }");
+		
+		this.fingerTable = new FingerTable(this);
+	}
+	
 	public void create() {
 		setPredecessor(null);
 		setSuccessor(this);

@@ -63,6 +63,10 @@ public class Node implements Serializable {
 	public long getIdentifier() {
 		return identifier;
 	}
+	
+	public void setIdentifier(long identifier) {
+		this.identifier = identifier;
+	}
 
 	private long calculateChordId(String IpAndPort) {
 		long chordID = 0;

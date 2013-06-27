@@ -86,14 +86,16 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 		}      
     }
  
-    public synchronized void updateNodes(ChordNode node) {
-    	if (nodes.containsKey(node.getIdentifier())) {
-    		nodes.remove(node.getIdentifier());
-    	}
-    	
-    	nodes.put(node.getIdentifier(), node);
-    	
-    	tableView.getNodesTable().setModel(new NodesTableModel(nodes));
+    public void updateNodes(ChordNode node) {
+    	synchronized (nodes) {
+    		if (nodes.containsKey(node.getIdentifier())) {
+        		nodes.remove(node.getIdentifier());
+        	}
+        	
+        	nodes.put(node.getIdentifier(), node);
+        	
+        	tableView.getNodesTable().setModel(new NodesTableModel(nodes));
+		}
     }
 
 	@Override

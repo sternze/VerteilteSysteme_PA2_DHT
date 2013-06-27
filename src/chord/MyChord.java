@@ -26,7 +26,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 	private static final int MIN_PORT_NUMBER = 8000;
 	private static final int MAX_PORT_NUMBER = 10000;
 	private static final String DEFAULT_SERVICE_NAME = "PA2_MyKV";
-	public static final int KEYLENGTH = 8;
+	public static final int KEYLENGTH = 3;
 	
 	private static ChordNode me;
 	private static IChordGraphView graphViewContact = null;
@@ -35,16 +35,22 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 	private static String ServiceName = "";
 	private static String ConnectionURI = "";
 	private static String GraphViewConnectionURI = "";
+	private static long manualId = -1;
 	
 	protected MyChord() throws RemoteException {
 		super();
 	}
 	
 	public static void main(String[] args) {
+		
 		if(args.length >= 1 && !args[0].equals("${ServiceName}")) {
 			ServiceName = args[0];
 		} else {
 			ServiceName = DEFAULT_SERVICE_NAME;
+		}
+		
+		if (args.length >= 4 && !args[3].equals("${manualID}")) {
+			manualId = Long.parseLong(args[3]);
 		}
 		
 		Registry reg = establishRegistry(); 
@@ -55,7 +61,11 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 			
 			System.out.println(new Date() + " Registered with registry");
 			
-			me = new ChordNode(MyChordUtils.getIPAdressOfNic("net4"), port, ServiceName, KEYLENGTH);
+			if (manualId == -1) {
+				me = new ChordNode(MyChordUtils.getIPAdressOfNic("net4"), port, ServiceName, KEYLENGTH);
+			} else {
+				me = new ChordNode(manualId, MyChordUtils.getIPAdressOfNic("net4"), port, ServiceName, KEYLENGTH);
+			}
 			
 			if (args.length >= 2 && !args[1].equals("${GraphViewIP:Port}")) {
 				GraphViewConnectionURI = args[1];
@@ -63,7 +73,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 				GraphViewConnectionURI = MyChordUtils.getIPAdressOfNic("net4") + ":" + ChordGraphView.GRAPH_VIEW_PORT;
 			}
 			
-			if (args.length >= 3 && !args[2].equals("${NodeIP:Port}")) {
+			if (args.length >= 3 && !args[2].equals("${NodeIP:Port}") && !args[2].equals("1:1")) {
 				ConnectionURI = args[2];
 							
 				me.join(new Node(ConnectionURI.split(":")[0], Integer.parseInt(ConnectionURI.split(":")[1]), ServiceName, KEYLENGTH));      	
@@ -81,7 +91,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						me.stabilize();
 						
 						try {
-							Thread.sleep(100);
+							Thread.sleep(50);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
@@ -99,7 +109,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						me.fixFingers();
 						
 						try {
-							Thread.sleep(50);
+							Thread.sleep(100);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
