@@ -68,14 +68,18 @@ public class ChordNode extends Node implements Serializable {
 	public Node findPredecessor(long id) {
 		Node node = this;
 		while (!ChordUtils.inRangeLeftOpenIntervall(id, node.getIdentifier(), node.getSuccessor().getIdentifier())) {
-			try {
-				IMyChord contact = (IMyChord) Naming.lookup("rmi://" + node.getIp() + ":" + node.getPort() + "/" + node.getServiceName());
-	        	
-				node = contact.closestPrecedingFinger(id);
-				
-	        	contact = null;
-			} catch (MalformedURLException | RemoteException | NotBoundException e) { 
-				e.printStackTrace();
+			if (node.getIdentifier() == getIdentifier()) {
+				node = closestPrecedingFinger(id);
+			} else {
+				try {
+					IMyChord contact = (IMyChord) Naming.lookup("rmi://" + node.getIp() + ":" + node.getPort() + "/" + node.getServiceName());
+		        	
+					node = contact.closestPrecedingFinger(id);
+					
+		        	contact = null;
+				} catch (MalformedURLException | RemoteException | NotBoundException e) { 
+					e.printStackTrace();
+				}
 			}
 		}
 		
@@ -125,8 +129,8 @@ public class ChordNode extends Node implements Serializable {
 			try {
 				IMyChord contact = (IMyChord) Naming.lookup("rmi://" + getPredecessor().getIp() + ":" + getPredecessor().getPort() + "/" + getPredecessor().getServiceName());
 	        	
-				contact.notifyPredecessor(node);
 				setPredecessor(node);
+				contact.notifyPredecessor(node);
 	      
 	        	contact = null;
 			} catch (MalformedURLException | RemoteException | NotBoundException e) { 

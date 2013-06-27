@@ -1,6 +1,8 @@
 package chord.gui;
 
+import java.awt.BasicStroke;
 import java.awt.Dimension;
+import java.awt.Stroke;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -10,6 +12,8 @@ import java.util.Date;
 import java.util.TreeMap;
 
 import javax.swing.JFrame;
+
+import org.apache.commons.collections15.Transformer;
 
 import chord.data.ChordNode;
 import chord.interfaces.IChordGraphView;
@@ -118,11 +122,11 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 					g.removeEdge(node.getIdentifier() + "successor");
 					g.addEdge(node.getIdentifier() + "successor", node.getIdentifier(), node.getSuccessor().getIdentifier());
 				}
-				/*
+				
 				if (node.getPredecessor() != null && g.containsVertex(node.getPredecessor().getIdentifier())) {
 					g.removeEdge(node.getIdentifier() + "predecessor");
 					g.addEdge(node.getIdentifier() + "predecessor", node.getIdentifier(), node.getPredecessor().getIdentifier());
-				}*/
+				}
 			}
 		}
 		
@@ -134,6 +138,18 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
         vv = new BasicVisualizationServer<Long, String>(layout);
         vv.setPreferredSize(new Dimension(1000,800)); //Sets the viewing area size
         vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<Long>());
+        
+        float dash[] = { 10.0f };
+		final Stroke edgeStroke = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f);
+        
+ 		Transformer<String, Stroke> edgePaint = new Transformer<String, Stroke>() {
+			@Override
+			public Stroke transform(String s) {
+				return s.contains("successor") ? new BasicStroke() : edgeStroke;
+			}
+ 		};
+ 		
+ 		vv.getRenderContext().setEdgeStrokeTransformer(edgePaint);
         
         graphView.getContentPane().remove(vv); 
         graphView.getContentPane().add(vv); 

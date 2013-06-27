@@ -26,7 +26,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 	private static final int MIN_PORT_NUMBER = 8000;
 	private static final int MAX_PORT_NUMBER = 10000;
 	private static final String DEFAULT_SERVICE_NAME = "PA2_MyKV";
-	public static final int KEYLENGTH = 60;
+	public static final int KEYLENGTH = 8;
 	
 	private static ChordNode me;
 	private static IChordGraphView graphViewContact = null;
@@ -81,7 +81,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						me.stabilize();
 						
 						try {
-							Thread.sleep(10);
+							Thread.sleep(100);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
@@ -99,7 +99,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						me.fixFingers();
 						
 						try {
-							Thread.sleep(2);
+							Thread.sleep(50);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
