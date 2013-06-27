@@ -1,9 +1,9 @@
-call "C:\Windows\System32\taskkill.exe /F /IM java.exe /T"
+taskkill.exe /F /IM java.exe /T
 
-call "ant compile jar"
+call ant build
 
 
-set countfiles=6
+set countOfNodes=6
 
 for /f "usebackq tokens=13 delims=: " %%i in ('ipconfig ^| find "IPv4 Address" ') do set MyIp=%%i
 set GuiIp=%MyIp%
@@ -25,5 +25,5 @@ start cmd /C "ant runNode -DMyIp=%MyIp%"
 timeout 5
 start cmd /C "ant runNode -DServiceName=PA2_MyKV -DNodeIP:Port=%ConnectingNodeIp%:8000 -DGraphViewIP:Port=%GuiIp%:7998 -DMyIp=%MyIp%"
 
-set /a countfiles-=1
-if %countfiles% GTR 1 goto loop
+set /a countOfNodes-=1
+if %countOfNodes% GTR 1 goto loop
