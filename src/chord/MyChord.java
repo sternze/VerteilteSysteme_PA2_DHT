@@ -225,8 +225,8 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 	}
 	
 	@Override
-	public void notify(Node node) throws RemoteException {
-		me.notify(node);
+	public Node notify(Node node) throws RemoteException {
+		return me.notify(node);
 	}
 
 	@Override

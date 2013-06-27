@@ -125,7 +125,7 @@ public class ChordNode extends Node implements Serializable {
 			try {
 				IMyChord contact = (IMyChord) Naming.lookup("rmi://" + successor.getIp() + ":" + successor.getPort() + "/" + successor.getServiceName());
 	        	
-				contact.notify(this);
+				setSuccessor(contact.notify(this));
 	      
 	        	contact = null;
 			} catch (MalformedURLException | RemoteException | NotBoundException e) { 
@@ -134,7 +134,7 @@ public class ChordNode extends Node implements Serializable {
 		}
 	}
 	
-	public void notify(Node node) {
+	public Node notify(Node node) {
 		//System.out.println(new Date() + " got nitfication from: " + node.getIdentifier());
 		
 		if (getPredecessor() == null) {
@@ -151,6 +151,8 @@ public class ChordNode extends Node implements Serializable {
 				e.printStackTrace();
 			}
 		}
+		
+		return this;
 	}
 	
 	public void notifyPredecessor(Node node) {
