@@ -94,15 +94,13 @@ public class ChordNode extends Node implements Serializable {
 	
 	public void stabilize() {
 		Node node = getSuccessor().getPredecessor();
+		
 		if (node != null) {
 			if (ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getIdentifier(), getSuccessor().getIdentifier())) {
 				setSuccessor(node);
 			}
 		}
 		
-		/*if (fingerTable.get(0).getNode().getIdentifier() != getIdentifier()) {
-			notify(this);
-		} else if (fingerTable.get(0).getNode() != null) {*/
 		if (getSuccessor() != null && getSuccessor().getIdentifier() != getIdentifier()) {
 			Node successor = getSuccessor();
 			
@@ -146,6 +144,7 @@ public class ChordNode extends Node implements Serializable {
 	public void fixFingers() {
 		//System.out.println(new Date() + " (" + me.getIdentifier() + ") fix fingers: start(" + fingerTable.get(i).getStart() + ")");
 		Node node = findSuccessor(fingerTable.get(nextEntry).getStart());
+		
 		if (nextEntry == 0) {
 			setSuccessor(node);
 		} else {
