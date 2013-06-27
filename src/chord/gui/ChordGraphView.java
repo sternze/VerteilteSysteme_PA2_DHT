@@ -5,6 +5,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.TreeMap;
 
@@ -13,7 +14,6 @@ import javax.swing.JFrame;
 import chord.data.ChordNode;
 import chord.interfaces.IChordGraphView;
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
-import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.visualization.BasicVisualizationServer;
@@ -32,7 +32,7 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 	private static BasicVisualizationServer<Long,String> vv;
 	private static JFrame graphView;
 	private static TableView tableView;
-	private static Layout<Long, String> layout;	
+	private static CircleLayout<Long, String> layout;	
 	private static Graph<Long, String> g;
 	private static TreeMap<Long, ChordNode> nodes;
 	
@@ -102,28 +102,33 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 	}
 	
 	private static void repaint() {
-		g = new DirectedSparseMultigraph<Long, String>();
 		
-		for (ChordNode node: nodes.values()) {
-			if (!g.containsVertex(node.getIdentifier())) {
-				g.addVertex(node.getIdentifier());
-				//nodes.put(node.getIdentifier(), node);
-			}
-		}
-		
-		for (ChordNode node: nodes.values()) {
-			if (node.getSuccessor() != null && g.containsVertex(node.getSuccessor().getIdentifier())) {
-				g.removeEdge(node.getIdentifier() + "successor");
-				g.addEdge(node.getIdentifier() + "successor", node.getIdentifier(), node.getSuccessor().getIdentifier());
+		synchronized (nodes) {
+			g = new DirectedSparseMultigraph<Long, String>();
+			
+			for (ChordNode node: nodes.values()) {
+				if (!g.containsVertex(node.getIdentifier())) {
+					g.addVertex(node.getIdentifier());
+					//nodes.put(node.getIdentifier(), node);
+				}
 			}
 			
-			if (node.getPredecessor() != null && g.containsVertex(node.getPredecessor().getIdentifier())) {
-				g.removeEdge(node.getIdentifier() + "predecessor");
-				g.addEdge(node.getIdentifier() + "predecessor", node.getIdentifier(), node.getPredecessor().getIdentifier());
+			for (ChordNode node: nodes.values()) {
+				if (node.getSuccessor() != null && g.containsVertex(node.getSuccessor().getIdentifier())) {
+					g.removeEdge(node.getIdentifier() + "successor");
+					g.addEdge(node.getIdentifier() + "successor", node.getIdentifier(), node.getSuccessor().getIdentifier());
+				}
+				
+				if (node.getPredecessor() != null && g.containsVertex(node.getPredecessor().getIdentifier())) {
+					g.removeEdge(node.getIdentifier() + "predecessor");
+					g.addEdge(node.getIdentifier() + "predecessor", node.getIdentifier(), node.getPredecessor().getIdentifier());
+				}
 			}
 		}
 		
+		
 		layout = new CircleLayout<Long, String>(g);
+		layout.setVertexOrder(new ArrayList<Long>(nodes.keySet()));
         layout.setSize(new Dimension(1000,800)); // sets the initial size of the layout space
         // The BasicVisualizationServer<V,E> is parameterized by the vertex and edge types
         vv = new BasicVisualizationServer<Long, String>(layout);

@@ -21,7 +21,7 @@ public class FingerTableModel extends AbstractTableModel {
 
 	@Override
 	public int getColumnCount() {
-		return 6;
+		return 7;
 	}
 	
 	public String getColumnName(int col) {
@@ -38,6 +38,8 @@ public class FingerTableModel extends AbstractTableModel {
 				return "Node";
 			case 5:
 				return "Successor";
+			case 6:
+				return "Predecessor";
 			default:
 				return "";
 		}
@@ -65,6 +67,8 @@ public class FingerTableModel extends AbstractTableModel {
 				return fte.getNode() != null ? fte.getNode().getIdentifier() : null;
 			case 5:
 				return fte.getSuccessor() != null ? fte.getSuccessor().getIdentifier() : null;
+			case 6:
+				return fte.getPredecessor() != null ? fte.getPredecessor().getIdentifier() : null;
 			default:
 				return null;
 		}

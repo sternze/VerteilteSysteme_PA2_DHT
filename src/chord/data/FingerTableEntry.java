@@ -24,8 +24,6 @@ public class FingerTableEntry implements Serializable {
 		this.start = calculateStart(this.index);
 		this.intervalLowerBound = this.start;
 		this.intervalUpperBound = calculateStart(this.index + 1);
-		this.successor = null;
-		this.predecessor = null;
 	}
 
 	private long calculateStart(int index) {
@@ -58,6 +56,8 @@ public class FingerTableEntry implements Serializable {
 	
 	public void setNode(Node node) {
 		this.node = node;
+		this.successor = this.node.getSuccessor();
+		this.predecessor = this.node.getPredecessor();
 	}
 	
 	public Node getOwner() {
