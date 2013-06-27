@@ -31,7 +31,7 @@ public class FingerTableEntry implements Serializable {
 	private long calculateStart(int index) {
 		BigInteger modulus = new BigInteger("2").pow(owner.getKeySize());
 		BigInteger offset = new BigInteger("2").pow(index);
-		BigInteger start = new BigInteger(owner.getIdentifier() + "").subtract(offset).mod(modulus);
+		BigInteger start = new BigInteger(owner.getIdentifier() + "").add(offset).mod(modulus);
 
 		return start.longValue();
 	}

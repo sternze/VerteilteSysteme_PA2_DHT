@@ -81,7 +81,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						me.stabilize();
 						
 						try {
-							Thread.sleep(100);
+							Thread.sleep(10);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
@@ -160,7 +160,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 			};
 			
 			stabilize.start();
-			//fixFingers.start();
+			fixFingers.start();
 			printStatus.start();
 			sendStatus.start();
 			

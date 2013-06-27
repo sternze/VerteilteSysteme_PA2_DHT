@@ -104,8 +104,8 @@ public class ChordNode extends Node implements Serializable {
 		/*if (fingerTable.get(0).getNode().getIdentifier() != getIdentifier()) {
 			notify(this);
 		} else if (fingerTable.get(0).getNode() != null) {*/
-		if (fingerTable.get(0).getNode() != null && fingerTable.get(0).getNode().getIdentifier() != getIdentifier()) {
-			Node successor = fingerTable.get(0).getNode();
+		if (getSuccessor() != null && getSuccessor().getIdentifier() != getIdentifier()) {
+			Node successor = getSuccessor();
 			
 			try {
 				IMyChord contact = (IMyChord) Naming.lookup("rmi://" + successor.getIp() + ":" + successor.getPort() + "/" + successor.getServiceName());
@@ -199,5 +199,9 @@ public class ChordNode extends Node implements Serializable {
 	
 	public Node getMe() {
 		return this;
+	}
+	
+	public FingerTable getFingerTable() {
+		return fingerTable;
 	}
 }

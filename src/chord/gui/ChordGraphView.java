@@ -6,7 +6,6 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.TreeMap;
 
 import javax.swing.JFrame;
@@ -31,16 +30,17 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 	public static final int GRAPH_VIEW_PORT = 7998;
 	
 	private static BasicVisualizationServer<Long,String> vv;
-	private static JFrame frame;
+	private static JFrame graphView;
+	private static TableView tableView;
 	private static Layout<Long, String> layout;	
 	private static Graph<Long, String> g;
-	private static HashMap<Long, ChordNode> nodes;
+	private static TreeMap<Long, ChordNode> nodes;
 	
     /** Creates a new instance of SimpleGraphView */
     public ChordGraphView() throws RemoteException {
         // Graph<V, E> where V is the type of the vertices and E is the type of the edges
         g = new DirectedSparseMultigraph<Long, String>();   
-        nodes = new HashMap<Long, ChordNode>();
+        nodes = new TreeMap<Long, ChordNode>();
     }
     
 
@@ -67,9 +67,13 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 			
 			reg.rebind(GRAPH_VIEW_SERVICE_NAME, sgv);       // Bind object
 			
-	        frame = new JFrame("ChordGraphView");
-	        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	        frame.setVisible(true);  
+	        graphView = new JFrame("ChordGraphView");
+	        graphView.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	        graphView.setVisible(true);  
+	        
+	        tableView = new TableView("TableView", nodes);
+	        tableView.setVisible(true);
+	        tableView.pack();
 	        
 	        repaint();
 		} catch (RemoteException e) {
@@ -84,6 +88,8 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
     	}
     	
     	nodes.put(node.getIdentifier(), node);
+    	
+    	tableView.getNodesTable().setModel(new NodesTableModel(nodes));
     }
 
 	@Override
@@ -96,18 +102,16 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 	}
 	
 	private static void repaint() {
-		TreeMap<Long, ChordNode> sortedMap = new TreeMap<Long, ChordNode>(nodes);
-		
 		g = new DirectedSparseMultigraph<Long, String>();
 		
-		for (ChordNode node: sortedMap.values()) {
+		for (ChordNode node: nodes.values()) {
 			if (!g.containsVertex(node.getIdentifier())) {
 				g.addVertex(node.getIdentifier());
-				nodes.put(node.getIdentifier(), node);
+				//nodes.put(node.getIdentifier(), node);
 			}
 		}
 		
-		for (ChordNode node: sortedMap.values()) {
+		for (ChordNode node: nodes.values()) {
 			if (node.getSuccessor() != null && g.containsVertex(node.getSuccessor().getIdentifier())) {
 				g.removeEdge(node.getIdentifier() + "successor");
 				g.addEdge(node.getIdentifier() + "successor", node.getIdentifier(), node.getSuccessor().getIdentifier());
@@ -126,8 +130,8 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
         vv.setPreferredSize(new Dimension(1000,800)); //Sets the viewing area size
         vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<Long>());
         
-        frame.getContentPane().remove(vv); 
-        frame.getContentPane().add(vv); 
-        frame.pack();
+        graphView.getContentPane().remove(vv); 
+        graphView.getContentPane().add(vv); 
+        graphView.pack();
 	}
 }
