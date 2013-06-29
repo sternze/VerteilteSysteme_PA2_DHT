@@ -90,8 +90,9 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 					while (true) {
 						me.stabilize();
 						
+						System.gc();
 						try {
-							Thread.sleep(50);
+							Thread.sleep(1000);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
@@ -109,7 +110,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						me.fixFingers();
 						
 						try {
-							Thread.sleep(100);
+							Thread.sleep(2000);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -160,7 +161,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						}
 						
 						try {
-							Thread.sleep(1000);
+							Thread.sleep(5000);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();

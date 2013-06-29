@@ -76,7 +76,9 @@ public class ChordNode extends Node implements Serializable {
 	
 	public Node findSuccessor(long id) {
 		Node predecessor = findPredecessor(id);
-		return predecessor.getSuccessor();
+		Node retVal = predecessor.getSuccessor();
+		
+		return retVal;
 	}
 	
 	public Node findPredecessor(long id) {
@@ -97,7 +99,7 @@ public class ChordNode extends Node implements Serializable {
 			}
 		}
 		
-		return  node;
+		return node;
 	}
 	
 	public Node closestPrecedingFinger(long id) {
@@ -125,7 +127,15 @@ public class ChordNode extends Node implements Serializable {
 			try {
 				IMyChord contact = (IMyChord) Naming.lookup("rmi://" + successor.getIp() + ":" + successor.getPort() + "/" + successor.getServiceName());
 	        	
-				setSuccessor(contact.notify(this));
+				
+				Node n = contact.notify(this);
+				
+				if(!getSuccessor().equals(n)) {
+					setSuccessor(n);
+				}
+				
+				n = null;
+				
 	      
 	        	contact = null;
 			} catch (MalformedURLException | RemoteException | NotBoundException e) { 
@@ -141,8 +151,8 @@ public class ChordNode extends Node implements Serializable {
 			setPredecessor(node);
 		} else if (ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getPredecessor().getIdentifier(), getIdentifier())) {
 			try {
-				IMyChord contact = (IMyChord) Naming.lookup("rmi://" + getPredecessor().getIp() + ":" + getPredecessor().getPort() + "/" + getPredecessor().getServiceName());
-	        	
+				IMyChord contact = (IMyChord) Naming.lookup("rmi://" + getPredecessor().getIp() + ":" + getPredecessor().getPort() + "/" + getPredecessor().getServiceName());				
+				
 				setPredecessor(node);
 				contact.notifyPredecessor(node);
 	      
@@ -152,7 +162,11 @@ public class ChordNode extends Node implements Serializable {
 			}
 		}
 		
-		return this;
+		return new Node(this);
+	}
+	
+	public ChordNode(ChordNode cn) {
+		super(cn.getIp(), cn.getPort(), cn.getServiceName(), cn.getKeySize());
 	}
 	
 	public void notifyPredecessor(Node node) {
@@ -211,7 +225,9 @@ public class ChordNode extends Node implements Serializable {
 	}
 	
 	public void setSuccessor(Node node) {
-		fingerTable.get(0).setNode(node);
+		if(fingerTable != null) {
+			fingerTable.get(0).setNode(node);
+		}
 		super.setSuccessor(node);
 	}
 	

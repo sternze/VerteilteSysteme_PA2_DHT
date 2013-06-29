@@ -104,7 +104,7 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 		
 		updateNodes(node);
 
-		repaint();       
+		repaint();
 	}
 	
 	private static void repaint() {
