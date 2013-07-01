@@ -5,7 +5,12 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import chord.interfaces.IMyChord;
 import chord.utils.ChordUtils;
@@ -19,7 +24,12 @@ public class ChordNode extends Node implements Serializable {
 	
 	private FingerTable fingerTable;
 	
+	private Entries entries;
+	
 	private int nextEntry = 0;
+	
+	// This list stores information about replicas.
+	private List<Node> successors = new ArrayList<Node>();
 	
 	public ChordNode(String ip, int port, String serviceName, int keySize) {
 		super(ip, port, serviceName, keySize);
@@ -50,7 +60,7 @@ public class ChordNode extends Node implements Serializable {
 	
 	public void create() {
 		setPredecessor(null);
-		setSuccessor(this);
+		setSuccessor(new Node(this));
 		
 		System.out.println(new Date() + " i'm the first one");
 	}
@@ -76,7 +86,7 @@ public class ChordNode extends Node implements Serializable {
 	
 	public Node findSuccessor(long id) {
 		Node predecessor = findPredecessor(id);
-		Node retVal = predecessor.getSuccessor();
+		Node retVal = getNodeOfOtherNode(predecessor, true);
 		
 		return retVal;
 	}
@@ -113,7 +123,8 @@ public class ChordNode extends Node implements Serializable {
 	}
 	
 	public void stabilize() {
-		Node node = getSuccessor().getPredecessor();
+		
+		Node node = getNodeOfOtherNode(getSuccessor(), false);
 		
 		if (node != null) {
 			if (ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getIdentifier(), getSuccessor().getIdentifier())) {
@@ -126,16 +137,8 @@ public class ChordNode extends Node implements Serializable {
 			
 			try {
 				IMyChord contact = (IMyChord) Naming.lookup("rmi://" + successor.getIp() + ":" + successor.getPort() + "/" + successor.getServiceName());
-	        	
 				
-				Node n = contact.notify(this);
-				
-				if(!getSuccessor().equals(n)) {
-					setSuccessor(n);
-				}
-				
-				n = null;
-				
+				contact.notify(new Node(this));
 	      
 	        	contact = null;
 			} catch (MalformedURLException | RemoteException | NotBoundException e) { 
@@ -144,7 +147,28 @@ public class ChordNode extends Node implements Serializable {
 		}
 	}
 	
-	public Node notify(Node node) {
+	// gets either the successor or the predecessor of the contact node.
+	private Node getNodeOfOtherNode(Node contactNode, boolean isSuccessor) {
+		Node ret = null;
+		
+		try {
+			IMyChord contact = (IMyChord) Naming.lookup("rmi://" + contactNode.getIp() + ":" + contactNode.getPort() + "/" + contactNode.getServiceName());
+        	
+			if(isSuccessor) {
+				ret = contact.getCurrentSuccessor();
+			} else {
+				ret = contact.getCurrentPredecessor();
+			}
+      
+        	contact = null;
+		} catch (MalformedURLException | RemoteException | NotBoundException e) { 
+			e.printStackTrace();
+		}
+		
+		return ret;
+	}
+	
+	public void notify(Node node) {
 		//System.out.println(new Date() + " got nitfication from: " + node.getIdentifier());
 		
 		if (getPredecessor() == null) {
@@ -160,13 +184,10 @@ public class ChordNode extends Node implements Serializable {
 			} catch (MalformedURLException | RemoteException | NotBoundException e) { 
 				e.printStackTrace();
 			}
+		} else if(node.getIdentifier() == getPredecessor().getIdentifier()) {
+			setPredecessor(node);
 		}
 		
-		return new Node(this);
-	}
-	
-	public ChordNode(ChordNode cn) {
-		super(cn.getIp(), cn.getPort(), cn.getServiceName(), cn.getKeySize());
 	}
 	
 	public void notifyPredecessor(Node node) {
@@ -237,5 +258,68 @@ public class ChordNode extends Node implements Serializable {
 	
 	public FingerTable getFingerTable() {
 		return fingerTable;
+	}
+	
+	public List<Node> getSuccessors() {
+		return this.successors;
+	}
+	
+	public void insertEntry_ChordInternal(MyValue toInsert, boolean includeReplicas) {
+		
+		// add entry to local repository
+		this.entries.add(toInsert);
+
+		// create set containing this entry for insertion of replicates at all
+		// nodes in successor list
+		if(includeReplicas) {
+			Set<MyValue> newEntries = new HashSet<MyValue>();
+			newEntries.add(toInsert);
+	
+			// invoke insertReplicates method on all nodes in successor list
+			final Set<MyValue> mustBeFinal = new HashSet<MyValue>(newEntries);
+			for (final Node successor : this.getSuccessors()) {
+				new Thread(new Runnable() {
+					public void run() {
+						try {
+							// TODO: create RMI call "insertReplicas" on successor.
+						} catch (Exception e) {
+							// do nothing
+						}
+					}
+				}).start();
+			}
+		}
+	}
+	
+	public void insertData(MyValue entryToInsert, boolean createReplicas) {
+		// check parameters
+		if (entryToInsert.getData() == null) {
+			throw new NullPointerException(
+					"Neither parameter may have value null!");
+		}
+
+		boolean inserted = false;
+		while (!inserted) {
+			// find successor of id
+			Node responsibleNode = this.findSuccessor(entryToInsert.getId());
+
+			// invoke insertEntry method
+			try {
+				try {
+					IMyChord contact = (IMyChord) Naming.lookup("rmi://" + responsibleNode.getIp() + ":" + responsibleNode.getPort() + "/" + responsibleNode.getServiceName());
+		        	
+					
+					contact.insertEntry_ChordInternal(entryToInsert, createReplicas);
+					
+		      
+		        	contact = null;
+				} catch (MalformedURLException | RemoteException | NotBoundException e) { 
+					e.printStackTrace();
+				}
+				inserted = true;
+			} catch (Exception ex) {
+				continue;
+			}
+		}
 	}
 }

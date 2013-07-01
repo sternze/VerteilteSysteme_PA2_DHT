@@ -41,7 +41,7 @@ public class Node implements Serializable {
 		this.keySize = cn.getKeySize();
 		if(cn.getSuccessor() != null) {
 			// diese bedingung dient dazu, dass nicht immer rekursiv versucht wird die
-			if(i < 1) {
+			if(i < 2) {
 				if(cn.getSuccessor() instanceof ChordNode) {
 					this.successor = new Node((ChordNode)cn.getSuccessor(), i+1);
 				} else {

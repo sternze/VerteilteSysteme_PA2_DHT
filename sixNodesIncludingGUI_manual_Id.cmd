@@ -6,7 +6,7 @@ call ant build
 
 set countOfNodes=3
 
-set MyIp=192.168.0.170
+set MyIp=192.168.43.213
 
 rem for /f "usebackq tokens=13 delims=: " %%i in ('ipconfig ^| find "IPv4 Address" ') do set MyIp=%%i
 set GuiIp=%MyIp%
@@ -21,7 +21,7 @@ start cmd /C "ant runGui -DMyIp=%MyIp%"
 timeout 1
 start cmd /C "ant runNode -DMyIp=%MyIp% -DmanualID=0"
 
-FOR %%G IN (1, 3, 6) DO (
+FOR %%G IN (1,3) DO (
 	timeout 1
 	start cmd /C "ant runNode -DServiceName=PA2_MyKV -DNodeIP:Port=%ConnectingNodeIp%:8000 -DGraphViewIP:Port=%GuiIp%:7998 -DMyIp=%MyIp% -DmanualID=%%G"
 )

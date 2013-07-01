@@ -10,6 +10,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.Date;
 
 import chord.data.ChordNode;
+import chord.data.MyValue;
 import chord.data.Node;
 import chord.gui.ChordGraphView;
 import chord.interfaces.IChordGraphView;
@@ -92,7 +93,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						
 						System.gc();
 						try {
-							Thread.sleep(1000);
+							Thread.sleep(100);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
@@ -110,7 +111,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						me.fixFingers();
 						
 						try {
-							Thread.sleep(2000);
+							Thread.sleep(200);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -212,26 +213,77 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 
 	@Override
 	public Node findSuccessor(long id) throws RemoteException {
-		return me.findSuccessor(id);
+		Node n = me.findSuccessor(id);
+		
+		if(n instanceof ChordNode) {
+			return new Node((ChordNode)n);
+		} else {
+			return n;
+		}
 	}
 
 	@Override
 	public Node findPredecessor(long id) throws RemoteException {
-		return me.findPredecessor(id);
+		Node n = me.findPredecessor(id);
+		
+		if(n instanceof ChordNode) {
+			return new Node((ChordNode)n);
+		} else {
+			return n;
+		}
 	}
 
 	@Override
 	public Node closestPrecedingFinger(long id) throws RemoteException {
-		return me.closestPrecedingFinger(id);
+		Node n = me.closestPrecedingFinger(id);
+		
+		if(n instanceof ChordNode) {
+			return new Node((ChordNode)n);
+		} else {
+			return n;
+		}
 	}
 	
 	@Override
-	public Node notify(Node node) throws RemoteException {
-		return me.notify(node);
+	public void notify(Node node) throws RemoteException {
+		me.notify(node);
 	}
 
 	@Override
 	public void notifyPredecessor(Node node) throws RemoteException {
 		me.notifyPredecessor(node);
+	}
+
+	@Override
+	public void insertData(MyValue data, boolean createReplicas) throws RemoteException {
+		me.insertData(data, createReplicas);
+	}
+
+	@Override
+	public void insertEntry_ChordInternal(MyValue data, boolean createReplicas)
+			throws RemoteException {
+		me.insertEntry_ChordInternal(data, createReplicas);
+	}
+
+	@Override
+	public Node getCurrentPredecessor() throws RemoteException {
+		Node n = me.getPredecessor();
+		
+		if(n instanceof ChordNode) {
+			return new Node((ChordNode)n);
+		} else {
+			return n;
+		}
+	}
+
+	@Override
+	public Node getCurrentSuccessor() throws RemoteException {
+		Node n = me.getSuccessor();
+		
+		if(n instanceof ChordNode) {
+			return new Node((ChordNode)n);
+		} else {
+			return n;
+		}
 	}
 }
