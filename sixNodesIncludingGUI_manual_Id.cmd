@@ -21,7 +21,7 @@ start cmd /C "ant runGui -DMyIp=%MyIp%"
 timeout 1
 start cmd /C "ant runNode -DMyIp=%MyIp% -DmanualID=0"
 
-FOR %%G IN (1,3) DO (
+FOR %%G IN (1, 3, 6) DO (
 	timeout 1
 	start cmd /C "ant runNode -DServiceName=PA2_MyKV -DNodeIP:Port=%ConnectingNodeIp%:8000 -DGraphViewIP:Port=%GuiIp%:7998 -DMyIp=%MyIp% -DmanualID=%%G"
 )

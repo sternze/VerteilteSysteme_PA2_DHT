@@ -8,6 +8,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Date;
+import java.util.Set;
 
 import chord.data.ChordNode;
 import chord.data.MyValue;
@@ -27,7 +28,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 	private static final int MIN_PORT_NUMBER = 8000;
 	private static final int MAX_PORT_NUMBER = 10000;
 	private static final String DEFAULT_SERVICE_NAME = "PA2_MyKV";
-	public static final int KEYLENGTH = 3;
+	public static final int KEYLENGTH = 60;
 	
 	private static ChordNode me;
 	private static IChordGraphView graphViewContact = null;
@@ -93,7 +94,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						
 						System.gc();
 						try {
-							Thread.sleep(100);
+							Thread.sleep(1000);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
@@ -111,7 +112,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						me.fixFingers();
 						
 						try {
-							Thread.sleep(200);
+							Thread.sleep(2000);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -162,7 +163,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 						}
 						
 						try {
-							Thread.sleep(5000);
+							Thread.sleep(2000);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -286,4 +287,45 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 			return n;
 		}
 	}
+
+	@Override
+	public void removeData(MyValue data, boolean deleteReplicas)
+			throws RemoteException {
+		me.removeData(data, deleteReplicas);
+		
+	}
+
+	@Override
+	public void removeEntry_ChordInternal(MyValue data, boolean deleteReplicas)
+			throws RemoteException {
+		me.removeEntry_ChordInternal(data, deleteReplicas);
+		
+	}
+
+	@Override
+	public void leavesNetwork(Node newPredecessor) throws RemoteException {
+		me.setPredecessor(newPredecessor);
+	}
+
+	@Override
+	public void leave() throws RemoteException {
+		me.leave();
+	}
+
+	@Override
+	public Set<MyValue> query(long id) throws RemoteException {
+		return me.query(id);
+	}
+
+	@Override
+	public Set<MyValue> queryData_ChordInternal(long id) throws RemoteException {
+		return me.queryData_ChordInternal(id);
+	}
+
+	@Override
+	public Set<MyValue> migrateDataAfterJoin(Node potentialPredecessor) throws RemoteException {
+		return me.migrateDataAfterJoin(potentialPredecessor);
+	}
+	
+	
 }

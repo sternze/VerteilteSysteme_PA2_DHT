@@ -4,9 +4,9 @@ call ant clean
 call ant build
 
 
-set countOfNodes=3
+set countOfNodes=20
 
-set MyIp=143.205.195.181
+set MyIp=192.168.43.213
 
 rem for /f "usebackq tokens=13 delims=: " %%i in ('ipconfig ^| find "IPv4 Address" ') do set MyIp=%%i
 set GuiIp=%MyIp%

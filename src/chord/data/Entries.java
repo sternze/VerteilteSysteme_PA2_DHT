@@ -22,12 +22,8 @@ public class Entries {
 	/**
 	 * Stores a set of entries to the local hash table.
 	 * 
-	 * @param entriesToAdd
-	 *            Set of entries to add to the repository.
-	 * @throws NullPointerException
-	 *             If set reference is <code>null</code>.
 	 */
-	final void addAll(Set<MyValue> entriesToAdd) {
+	void addAll(Set<MyValue> entriesToAdd) {
 
 		if (entriesToAdd == null) {
 			NullPointerException e = new NullPointerException(
@@ -44,12 +40,8 @@ public class Entries {
 	/**
 	 * Stores one entry to the local hash table.
 	 * 
-	 * @param entryToAdd
-	 *            Entry to add to the repository.
-	 * @throws NullPointerException
-	 *             If entry to add is <code>null</code>.
 	 */
-	final void add(MyValue entryToAdd) {
+	void add(MyValue entryToAdd) {
 		
 		if (entryToAdd == null) {
 			NullPointerException e = new NullPointerException(
@@ -72,12 +64,8 @@ public class Entries {
 	/**
 	 * Removes the given entry from the local hash table.
 	 * 
-	 * @param entryToRemove
-	 *            Entry to remove from the hash table.
-	 * @throws NullPointerException
-	 *             If entry to remove is <code>null</code>.
 	 */
-	final void remove(MyValue entryToRemove) {
+	void remove(MyValue entryToRemove) {
 		
 		if (entryToRemove == null) {
 			NullPointerException e = new NullPointerException(
@@ -100,14 +88,8 @@ public class Entries {
 	 * Returns a set of entries matching the given ID. If no entries match the
 	 * given ID, an empty set is returned.
 	 * 
-	 * @param id
-	 *            ID of entries to be returned.
-	 * @throws NullPointerException
-	 *             If given ID is <code>null</code>.
-	 * @return Set of matching entries. Empty Set if no matching entries are
-	 *         available.
 	 */
-	final Set<MyValue> getEntries(Long id) {
+	Set<MyValue> getEntries(Long id) {
 
 		if (id == null) {
 			NullPointerException e = new NullPointerException(
@@ -139,19 +121,8 @@ public class Entries {
 	/**
 	 * Returns all entries in interval, excluding lower bound, but including
 	 * upper bound
-	 * 
-	 * @param fromID
-	 *            Lower bound of IDs; entries matching this ID are NOT included
-	 *            in result.
-	 * @param toID
-	 *            Upper bound of IDs; entries matching this ID ARE included in
-	 *            result.
-	 * @throws NullPointerException
-	 *             If either or both of the given ID references have value
-	 *             <code>null</code>.
-	 * @return Set of matching entries.
 	 */
-	final Set<MyValue> getEntriesInInterval(Long fromID, Long toID) {
+	Set<MyValue> getEntriesInInterval(Long fromID, Long toID) {
 
 		if (fromID == null || toID == null) {
 			NullPointerException e = new NullPointerException(
@@ -163,7 +134,7 @@ public class Entries {
 
 		synchronized (this.entries) {
 			for (Long nextID : this.entries.keySet()) {
-				if (ChordUtils.inRangeOpenIntervall(nextID, fromID, toID)) {
+				if (ChordUtils.inRangeLeftOpenIntervall(nextID, fromID, toID)) {
 					Set<MyValue> entriesForID = this.entries.get(nextID);
 					for (MyValue entryToAdd : entriesForID) {
 						result.add(entryToAdd);
@@ -180,13 +151,8 @@ public class Entries {
 
 	/**
 	 * Removes the given entries from the local hash table.
-	 * 
-	 * @param toRemove
-	 *            Set of entries to remove from local hash table.
-	 * @throws NullPointerException
-	 *             If the given set of entries is <code>null</code>.
 	 */
-	final void removeAll(Set<MyValue> toRemove) {
+	void removeAll(Set<MyValue> toRemove) {
 
 		if (toRemove == null) {
 			NullPointerException e = new NullPointerException(
@@ -202,27 +168,22 @@ public class Entries {
 	/**
 	 * Returns an unmodifiable map of all stored entries.
 	 * 
-	 * @return Unmodifiable map of all stored entries.
 	 */
-	final Map<Long, Set<MyValue>> getEntries() {
+	Map<Long, Set<MyValue>> getEntries() {
 		return Collections.unmodifiableMap(this.entries);
 	}
 
 	/**
 	 * Returns the number of stored entries.
-	 * 
-	 * @return Number of stored entries.
 	 */
-	final int getNumberOfStoredEntries() {
+	int getNumberOfStoredEntries() {
 		return this.entries.size();
 	}
 
 	/**
 	 * Returns a formatted string of all entries stored in the local hash table.
-	 * 
-	 * @return String representation of all stored entries.
 	 */
-	public final String toString() {
+	public String toString() {
 		StringBuilder result = new StringBuilder("Entries:\n");
 		for (Map.Entry<Long, Set<MyValue>> entry : this.entries.entrySet()) {
 			result.append("  key = " + entry.getKey().toString()

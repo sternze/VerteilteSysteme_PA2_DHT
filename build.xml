@@ -56,7 +56,6 @@
 			<arg line="${ServiceName}"/>
 			<arg line="${GraphViewIP:Port}"/>
 			<arg line="${NodeIP:Port}"/>
-			<arg line="${manualID}"/>
             <jvmarg line="-Djava.rmi.server.hostname=${MyIp}"/>
             <classpath refid="Chord.classpath"/>
 		</java>
@@ -68,7 +67,6 @@
 			<arg line="${ServiceName}"/>
 			<arg line="${GraphViewIP:Port}"/>
 			<arg line="${NodeIP:Port}"/>
-			<arg line="${manualID}"/>
             <jvmarg line="-Djava.rmi.server.hostname=${MyIp}"/>
             <classpath refid="Chord.classpath"/>
 		</java>

@@ -71,15 +71,25 @@ public class ChordNode extends Node implements Serializable {
 		setPredecessor(null);
 
 		try {
-			IMyChord contact = (IMyChord) Naming.lookup("rmi://" + nodeToJoin.getIp() + ":" + nodeToJoin.getPort() + "/" + nodeToJoin.getServiceName());
+			IMyChord contact = ContactManager.get(nodeToJoin);
         	
 			Node node = contact.findSuccessor(getIdentifier());
+
+        	contact = null;
+
 			setSuccessor(node);
+        	
+        	IMyChord contact1 = ContactManager.get(node);
+        	
+        	Set<MyValue> migratableValues = contact1.migrateDataAfterJoin(node);
+        	
+        	for(MyValue myVal : migratableValues) {
+        		this.entries.add(myVal);
+        	}
 			
 			System.out.println(new Date() + " my successor is: " + node.getIdentifier());
-			
-        	contact = null;
-		} catch (MalformedURLException | RemoteException | NotBoundException e) { 
+		
+		} catch (RemoteException e) { 
 			e.printStackTrace();
 		}
 	}
@@ -306,14 +316,12 @@ public class ChordNode extends Node implements Serializable {
 			// invoke insertEntry method
 			try {
 				try {
-					IMyChord contact = (IMyChord) Naming.lookup("rmi://" + responsibleNode.getIp() + ":" + responsibleNode.getPort() + "/" + responsibleNode.getServiceName());
+					IMyChord contact = ContactManager.get(responsibleNode);
 		        	
-					
 					contact.insertEntry_ChordInternal(entryToInsert, createReplicas);
 					
-		      
 		        	contact = null;
-				} catch (MalformedURLException | RemoteException | NotBoundException e) { 
+				} catch (RemoteException e) { 
 					e.printStackTrace();
 				}
 				inserted = true;
@@ -321,5 +329,135 @@ public class ChordNode extends Node implements Serializable {
 				continue;
 			}
 		}
+	}
+	
+	public void removeEntry_ChordInternal(MyValue entryToRemove, boolean deleteReplicas) {
+
+		// remove entry from repository
+		this.entries.remove(entryToRemove);
+
+		if(deleteReplicas) {
+			// create set containing this entry for removal of replicates at all
+			// nodes in successor list
+			final Set<MyValue> entriesToRemove = new HashSet<MyValue>();
+			entriesToRemove.add(entryToRemove);
+	
+			// invoke removeReplicates method on all nodes in successor list
+			List<Node> successors = getSuccessors();
+			for (final Node successor : successors) {
+				new Thread(new Runnable() {
+					public void run() {
+						try {
+							// TODO: create RMI call "deleteReplicas" on successor.
+						} catch (Exception e) {
+							// do nothing
+						}
+					}
+				}).start();
+			}
+		}
+	}
+	
+	public void removeData(MyValue entryToDelete, boolean deleteReplicas) {
+
+		// check parameters
+		if (entryToDelete.getData() == null) {
+			throw new NullPointerException(
+					"Neither parameter may have value null!");
+		}
+
+		boolean removed = false;
+		while (!removed) {
+
+			// find successor of id
+			Node responsibleNode;
+			responsibleNode = findSuccessor(entryToDelete.getId());
+
+			
+			// invoke removeEntry method
+			try {
+				try {
+					IMyChord contact = ContactManager.get(responsibleNode);
+		        	
+					
+					contact.insertEntry_ChordInternal(entryToDelete, deleteReplicas);
+					
+		      
+		        	contact = null;
+				} catch (RemoteException e) { 
+					e.printStackTrace();
+				}
+				removed = true;
+			} catch (Exception e1) {
+				continue;
+			}
+		}
+	}
+
+	public void leave() {
+		//network was not created yet.
+		if(getSuccessor().getIdentifier() == getIdentifier() && getPredecessor() == null) {
+			return;
+		}
+		
+		Node successor = getSuccessor();
+		Node pred = getPredecessor();
+		if (successor != null && pred != null) {
+			try {
+				IMyChord contact = ContactManager.get(successor);
+	        	
+				if(pred instanceof ChordNode) {
+					pred = new Node((ChordNode)pred);
+				}
+				
+				contact.leavesNetwork(pred);
+	      
+	        	contact = null;
+			} catch (RemoteException e) { 
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public Set<MyValue> query(long id) {
+		Set<MyValue> result = null;
+
+		boolean retrieved = false;
+		while (!retrieved) {
+			// find successor of id
+			Node responsibleNode = null;
+
+			responsibleNode = findSuccessor(id);
+
+			// invoke retrieveEntry method
+			try {
+				try {
+					IMyChord contact = ContactManager.get(responsibleNode);
+		        	
+					result = contact.queryData_ChordInternal(id);
+				
+		        	contact = null;
+				} catch (RemoteException e) { 
+					e.printStackTrace();
+				}
+				
+				retrieved = true;
+			} catch (Exception e1) {
+				continue;
+			}
+		}
+		
+		return result;
+
+	}
+	
+	public Set<MyValue> queryData_ChordInternal(long id) {
+		return this.entries.getEntries(id);
+	}
+
+	public Set<MyValue> migrateDataAfterJoin(Node potentialPredecessor) {
+		Set<MyValue> copiedEntries = this.entries.getEntriesInInterval(potentialPredecessor.getIdentifier(), getIdentifier());
+
+		return copiedEntries;
 	}
 }
