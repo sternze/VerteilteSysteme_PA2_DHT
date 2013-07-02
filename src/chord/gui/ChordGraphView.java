@@ -8,6 +8,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.TreeMap;
 
@@ -16,6 +17,7 @@ import javax.swing.JFrame;
 import org.apache.commons.collections15.Transformer;
 
 import chord.data.ChordNode;
+import chord.data.Node;
 import chord.interfaces.IChordGraphView;
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
@@ -39,6 +41,8 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 	private static CircleLayout<Long, String> layout;	
 	private static Graph<Long, String> g;
 	private static TreeMap<Long, ChordNode> nodes;
+	private static Transformer<String, Stroke> edgePaint;
+	private static Transformer<Long, String> vertexLabel;
 	
     /** Creates a new instance of SimpleGraphView */
     public ChordGraphView() throws RemoteException {
@@ -79,7 +83,57 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 	        tableView.setVisible(true);
 	        tableView.pack();
 	        
-	        repaint();
+	        float dash[] = { 10.0f };
+			final Stroke edgeStroke = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f);
+			
+	        edgePaint = new Transformer<String, Stroke>() {
+				@Override
+				public Stroke transform(String s) {
+					return s.contains("successor") ? new BasicStroke() : edgeStroke;
+				}
+	 		};
+	 		
+	 		vertexLabel = new Transformer<Long, String>() {
+
+				@Override
+				public String transform(Long id) {
+					return nodes.get(id).getIdAndEntryCount();
+				}
+	 		};
+	 		
+	 		layout = new CircleLayout<Long, String>(g);
+			layout.setVertexOrder(new ArrayList<Long>(nodes.keySet()));
+	        layout.setSize(new Dimension(1000,800)); // sets the initial size of the layout space
+	        // The BasicVisualizationServer<V,E> is parameterized by the vertex and edge types
+	        
+	        vv = new BasicVisualizationServer<Long, String>(layout);
+	        vv.setPreferredSize(new Dimension(1000,800)); //Sets the viewing area size
+	        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<Long>());
+	
+	 		vv.getRenderContext().setEdgeStrokeTransformer(edgePaint);
+	 		vv.getRenderContext().setVertexLabelTransformer(vertexLabel);
+	        
+	        graphView.getContentPane().remove(vv); 
+	        graphView.getContentPane().add(vv); 
+	        graphView.pack();
+	 		
+	        Thread repaint = new Thread() {
+	        	@Override
+				public void run() {
+	        		while (true) {
+	        			repaint();
+	        			
+	        			try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+	        		}
+	        	}
+	        };
+	        
+	        repaint.start();
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -89,12 +143,12 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
     public void updateNodes(ChordNode node) {
     	synchronized (nodes) {
     		if (nodes.containsKey(node.getIdentifier())) {
-        		nodes.remove(node.getIdentifier());
-        	}
-        	
-        	nodes.put(node.getIdentifier(), node);
-        	
-        	tableView.getNodesTable().setModel(new NodesTableModel(nodes));
+    			nodes.remove(node.getIdentifier());
+    		}
+    		       	
+    		nodes.put(node.getIdentifier(), node);
+    		     	
+    		tableView.getNodesTable().setModel(new NodesTableModel(nodes));
 		}
     }
 
@@ -103,69 +157,59 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 		System.out.println(new Date() + " got push from " + node.getIdentifier());
 		
 		updateNodes(node);
-
-		repaint();
 	}
 	
 	private static void repaint() {
+		System.gc();
 		
 		synchronized (nodes) {
-			g = new DirectedSparseMultigraph<Long, String>();
 			
-			for (ChordNode node: nodes.values()) {
-				if (!g.containsVertex(node.getIdentifier())) {
-					g.addVertex(node.getIdentifier());
-					//nodes.put(node.getIdentifier(), node);
-				}
-			}
-			
-			for (ChordNode node: nodes.values()) {
-				if (node.getSuccessor() != null && g.containsVertex(node.getSuccessor().getIdentifier())) {
-					g.removeEdge(node.getIdentifier() + "successor");
-					g.addEdge(node.getIdentifier() + "successor", node.getIdentifier(), node.getSuccessor().getIdentifier());
+			//g = new DirectedSparseMultigraph<Long, String>();
+			if (nodes.size() > 0) {
+				Collection<Long> vertices = (Collection<Long>) g.getVertices();
+				
+				for (Long id : vertices) {
+					if (!nodes.containsKey(id)) {
+						g.removeVertex(id);
+						g.removeEdge(id + "successor");
+						g.removeEdge(id + "predecessor");
+					}
 				}
 				
-				if (node.getPredecessor() != null && g.containsVertex(node.getPredecessor().getIdentifier())) {
-					g.removeEdge(node.getIdentifier() + "predecessor");
-					g.addEdge(node.getIdentifier() + "predecessor", node.getIdentifier(), node.getPredecessor().getIdentifier());
+				for (Node node: nodes.values()) {
+					if (!g.containsVertex(node.getIdentifier())) {
+						g.addVertex(node.getIdentifier());
+					}
 				}
+				
+				for (Node node: nodes.values()) {
+					if (node.getSuccessor() != null && g.containsVertex(node.getSuccessor().getIdentifier())) {
+						g.removeEdge(node.getIdentifier() + "successor");
+						g.addEdge(node.getIdentifier() + "successor", node.getIdentifier(), node.getSuccessor().getIdentifier());
+					}
+					
+					if (node.getPredecessor() != null && g.containsVertex(node.getPredecessor().getIdentifier())) {
+						g.removeEdge(node.getIdentifier() + "predecessor");
+						g.addEdge(node.getIdentifier() + "predecessor", node.getIdentifier(), node.getPredecessor().getIdentifier());
+					}
+				}
+				
+				layout = new CircleLayout<Long, String>(g);
+				layout.setVertexOrder(new ArrayList<Long>(nodes.keySet()));
+		        layout.setSize(new Dimension(1000,800)); // sets the initial size of the layout space
+		        // The BasicVisualizationServer<V,E> is parameterized by the vertex and edge types
+		        
+		        vv = new BasicVisualizationServer<Long, String>(layout);
+		        vv.setPreferredSize(new Dimension(1000,800)); //Sets the viewing area size
+		        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<Long>());
+		
+		 		vv.getRenderContext().setEdgeStrokeTransformer(edgePaint);
+		 		vv.getRenderContext().setVertexLabelTransformer(vertexLabel);
+		        
+		        graphView.getContentPane().remove(vv); 
+		        graphView.getContentPane().add(vv); 
+		        graphView.pack();
 			}
 		}
-		
-		
-		layout = new CircleLayout<Long, String>(g);
-		layout.setVertexOrder(new ArrayList<Long>(nodes.keySet()));
-        layout.setSize(new Dimension(1000,800)); // sets the initial size of the layout space
-        // The BasicVisualizationServer<V,E> is parameterized by the vertex and edge types
-        vv = new BasicVisualizationServer<Long, String>(layout);
-        vv.setPreferredSize(new Dimension(1000,800)); //Sets the viewing area size
-        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<Long>());
-        
-        float dash[] = { 10.0f };
-		final Stroke edgeStroke = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f);
-        
- 		Transformer<String, Stroke> edgePaint = new Transformer<String, Stroke>() {
-			@Override
-			public Stroke transform(String s) {
-				return s.contains("successor") ? new BasicStroke() : edgeStroke;
-			}
- 		};
- 		
- 		Transformer<Long, String> vertexLabel = new Transformer<Long, String>() {
-
-			@Override
-			public String transform(Long id) {
-				return nodes.get(id).getIdAndEntryCount();
-			}
- 		};
- 		
- 		
- 		
- 		vv.getRenderContext().setEdgeStrokeTransformer(edgePaint);
- 		vv.getRenderContext().setVertexLabelTransformer(vertexLabel);
-        
-        graphView.getContentPane().remove(vv); 
-        graphView.getContentPane().add(vv); 
-        graphView.pack();
 	}
 }

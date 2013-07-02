@@ -13,11 +13,15 @@ import chord.data.Node;
 import chord.interfaces.IMyChord;
 
 public class test {
-
+	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
+
+	}
+	
+	public static void insertData() {
 		Node node = new Node("192.168.1.102", 8000, "PA2_MyKV", 3);
 		IMyChord contact = ContactManager.get(node);
 		
