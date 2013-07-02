@@ -1,15 +1,11 @@
 package chord.data;
 
 import java.io.Serializable;
-import java.net.MalformedURLException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import chord.interfaces.IMyChord;
@@ -268,6 +264,10 @@ public class ChordNode extends Node implements Serializable {
 	
 	public FingerTable getFingerTable() {
 		return fingerTable;
+	}
+	
+	public Entries getEntries() {
+		return entries;
 	}
 	
 	public List<Node> getSuccessors() {

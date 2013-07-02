@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Formatter;
 
 public class MyValue implements Serializable {
 	/**

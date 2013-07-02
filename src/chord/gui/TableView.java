@@ -5,7 +5,9 @@ import java.awt.Dimension;
 import java.util.TreeMap;
 
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 
 import chord.data.ChordNode;
 
@@ -17,22 +19,43 @@ public class TableView extends JFrame {
 	
 	private NodesTable nodesTable;
 	private static FingerTable fingerTable;
+	private static DataTable dataTable;
+	private static ValueTable valueTable;
 
 	public TableView(String title, TreeMap<Long, ChordNode> nodes) {
 		super(title);
 		getContentPane().setPreferredSize(new Dimension(900, 600));
 		getContentPane().setLayout(new BorderLayout(0, 0));
 		
-		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setPreferredSize(new Dimension(150, 2));
+		JScrollPane scrollPaneNodesTable = new JScrollPane();
+		scrollPaneNodesTable.setPreferredSize(new Dimension(150, 2));
 		nodesTable = new NodesTable(new NodesTableModel(nodes));
-		scrollPane.setViewportView(nodesTable);
-		getContentPane().add(scrollPane, BorderLayout.WEST);
+		scrollPaneNodesTable.setViewportView(nodesTable);
+		getContentPane().add(scrollPaneNodesTable, BorderLayout.WEST);
 		
-		JScrollPane scrollPane_1 = new JScrollPane();
+		JScrollPane scrollPaneFingerTable = new JScrollPane();
 		fingerTable = new FingerTable();
-		scrollPane_1.setViewportView(fingerTable);
-		getContentPane().add(scrollPane_1, BorderLayout.CENTER);
+		scrollPaneFingerTable.setViewportView(fingerTable);
+		
+		JScrollPane scrollPaneDataTable = new JScrollPane();
+		scrollPaneDataTable.setPreferredSize(new Dimension(150, 2));
+		dataTable = new DataTable();
+		scrollPaneDataTable.setViewportView(dataTable);
+		
+		JScrollPane scrollPaneValueTable = new JScrollPane();
+		valueTable = new ValueTable();
+		scrollPaneValueTable.setViewportView(valueTable);
+		
+		JPanel panelDataTab = new JPanel();
+		panelDataTab.setLayout(new BorderLayout(0, 0));
+		panelDataTab.add(scrollPaneDataTable, BorderLayout.WEST);
+		panelDataTab.add(scrollPaneValueTable, BorderLayout.CENTER);
+		
+		JTabbedPane tabbedPane = new JTabbedPane();
+		tabbedPane.addTab("FingerTable", scrollPaneFingerTable);
+		tabbedPane.addTab("Data", panelDataTab);
+		
+		getContentPane().add(tabbedPane, BorderLayout.CENTER);
 	}
 
 	
@@ -42,5 +65,13 @@ public class TableView extends JFrame {
 	
 	public static FingerTable getFingerTable() {
 		return fingerTable;
+	}
+	
+	public static DataTable getDataTable() {
+		return dataTable;
+	}
+	
+	public static ValueTable getValueTable() {
+		return valueTable;
 	}
 }

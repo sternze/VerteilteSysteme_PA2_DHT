@@ -18,6 +18,8 @@ public class NodesTable extends JTable {
 	private static NodesTableModel myModel;
 	private static int selectedIndex;
 	
+	public NodesTable () { }
+	
 	public NodesTable(final NodesTableModel model) {
 		super(model);
 		NodesTable.myModel = model;
@@ -30,6 +32,7 @@ public class NodesTable extends JTable {
 				long id = (long)myModel.getValueAt(selectedIndex, 0);
 				ChordNode node = myModel.getChordNode(id);
 				TableView.getFingerTable().setModel(new FingerTableModel(node.getFingerTable()));
+				TableView.getDataTable().setModel(new DataTableModel(node.getEntries()));
 				super.mouseClicked(e);
 			}
 			

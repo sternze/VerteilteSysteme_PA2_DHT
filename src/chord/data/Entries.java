@@ -15,7 +15,7 @@ public class Entries {
 	/**
 	 * Creates an empty repository for entries.
 	 */
-	Entries(){ 
+	public Entries(){ 
 		this.entries = Collections.synchronizedMap(new TreeMap<Long, Set<MyValue>>());
 	}
 
@@ -23,7 +23,7 @@ public class Entries {
 	 * Stores a set of entries to the local hash table.
 	 * 
 	 */
-	void addAll(Set<MyValue> entriesToAdd) {
+	public void addAll(Set<MyValue> entriesToAdd) {
 
 		if (entriesToAdd == null) {
 			NullPointerException e = new NullPointerException(
@@ -41,7 +41,7 @@ public class Entries {
 	 * Stores one entry to the local hash table.
 	 * 
 	 */
-	void add(MyValue entryToAdd) {
+	public void add(MyValue entryToAdd) {
 		
 		if (entryToAdd == null) {
 			NullPointerException e = new NullPointerException(
@@ -89,7 +89,7 @@ public class Entries {
 	 * given ID, an empty set is returned.
 	 * 
 	 */
-	Set<MyValue> getEntries(Long id) {
+	public Set<MyValue> getEntries(Long id) {
 
 		if (id == null) {
 			NullPointerException e = new NullPointerException(
@@ -122,7 +122,7 @@ public class Entries {
 	 * Returns all entries in interval, excluding lower bound, but including
 	 * upper bound
 	 */
-	Set<MyValue> getEntriesInInterval(Long fromID, Long toID) {
+	public Set<MyValue> getEntriesInInterval(Long fromID, Long toID) {
 
 		if (fromID == null || toID == null) {
 			NullPointerException e = new NullPointerException(
@@ -169,14 +169,14 @@ public class Entries {
 	 * Returns an unmodifiable map of all stored entries.
 	 * 
 	 */
-	Map<Long, Set<MyValue>> getEntries() {
+	public Map<Long, Set<MyValue>> getEntries() {
 		return Collections.unmodifiableMap(this.entries);
 	}
 
 	/**
 	 * Returns the number of stored entries.
 	 */
-	int getNumberOfStoredEntries() {
+	public int getNumberOfStoredEntries() {
 		return this.entries.size();
 	}
 

@@ -1,6 +1,10 @@
 package chord.test;
 
-import chord.utils.ChordUtils;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 
 public class test {
 
@@ -8,11 +12,28 @@ public class test {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// 1: is in range
-		// 2: lower bound
-		// 3: upper bound
-		System.out.println(ChordUtils.inRangeLeftOpenIntervall((long)71, (long)7, (long)25));
-		System.out.println(ChordUtils.inRangeOpenIntervall((long)25, (long)7, (long)71));
+
+		Enumeration<NetworkInterface> ni;
+		try {
+			ni = NetworkInterface.getNetworkInterfaces();
+			
+			while (ni.hasMoreElements()) {
+				NetworkInterface n = ni.nextElement();
+			    Enumeration<InetAddress> addresses = n.getInetAddresses();
+			    String IP = "";
+			    while (addresses.hasMoreElements()){
+			        InetAddress current_addr = addresses.nextElement();
+			        if (current_addr.isLoopbackAddress() || !(current_addr instanceof Inet4Address))
+			        	continue;
+			        IP = current_addr.getHostAddress();
+			    }
+			    
+			    System.out.println(n.getName() + " " + IP);
+			}
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }
