@@ -22,7 +22,8 @@ public class MyValue implements Serializable {
 	
 	public MyValue(byte[] data, int keysize) {
 		this.keysize = keysize;
-		this.setData(data);
+		this.data = data;
+		calculateKey();
 	}
 	
 	public long getId() {
@@ -35,7 +36,9 @@ public class MyValue implements Serializable {
 	
 	public void setData(byte[] data) {
 		this.data = data;
-		
+	}
+	
+	private void calculateKey() {
 		MessageDigest md;
 		try {
 			md = MessageDigest.getInstance("SHA-1");

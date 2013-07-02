@@ -45,7 +45,6 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 	private static JMenuBar menuBar;
 	private static JMenu view;
 	private static JMenuItem miTableView;
-	private static JMenuItem miDataControl;
 	
 	private static BasicVisualizationServer<Long,String> vv;
 	private static CircleLayout<Long, String> layout;	
@@ -92,10 +91,8 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 	        menuBar = new JMenuBar();
 	        view = new JMenu("View");
 	        miTableView = new JMenuItem("Table view");
-	        miDataControl = new JMenuItem("Data control");
 	        
 	        view.add(miTableView);
-	        view.add(miDataControl);
 	        menuBar.add(view);
 	        graphView.setJMenuBar(menuBar);
 	        
@@ -106,15 +103,6 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 					tableView = new TableView("TableView", nodes);
 			        tableView.setVisible(true);
 			        tableView.pack();
-				}
-			});
-	        
-	        miDataControl.addActionListener(new ActionListener() {
-				
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					// TODO Auto-generated method stub
-					
 				}
 			});
 	        

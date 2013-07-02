@@ -2,6 +2,7 @@ package chord.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.util.TreeMap;
 
 import javax.swing.JFrame;
@@ -21,17 +22,26 @@ public class TableView extends JFrame {
 	private static FingerTable fingerTable;
 	private static DataTable dataTable;
 	private static ValueTable valueTable;
+	private static DataInsertPanel dataInsertPanel;
+	private static DataQueryPanel dataQueryPanel;
 
 	public TableView(String title, TreeMap<Long, ChordNode> nodes) {
 		super(title);
+
 		getContentPane().setPreferredSize(new Dimension(900, 600));
 		getContentPane().setLayout(new BorderLayout(0, 0));
 		
 		JScrollPane scrollPaneNodesTable = new JScrollPane();
 		scrollPaneNodesTable.setPreferredSize(new Dimension(150, 2));
 		nodesTable = new NodesTable(new NodesTableModel(nodes));
+		dataInsertPanel = new DataInsertPanel(nodesTable);
+		dataQueryPanel = new DataQueryPanel(nodesTable);
+		nodesTable.subscribe(dataInsertPanel);
+		nodesTable.subscribe(dataQueryPanel);
 		scrollPaneNodesTable.setViewportView(nodesTable);
 		getContentPane().add(scrollPaneNodesTable, BorderLayout.WEST);
+		
+		
 		
 		JScrollPane scrollPaneFingerTable = new JScrollPane();
 		fingerTable = new FingerTable();
@@ -54,7 +64,13 @@ public class TableView extends JFrame {
 		JTabbedPane tabbedPane = new JTabbedPane();
 		tabbedPane.addTab("FingerTable", scrollPaneFingerTable);
 		tabbedPane.addTab("Data", panelDataTab);
+
+		JPanel controlPanel = new JPanel();
+		controlPanel.setLayout(new GridLayout(1, 2));
+		controlPanel.add(dataInsertPanel);
+		controlPanel.add(dataQueryPanel);
 		
+		getContentPane().add(controlPanel, BorderLayout.NORTH);
 		getContentPane().add(tabbedPane, BorderLayout.CENTER);
 	}
 
