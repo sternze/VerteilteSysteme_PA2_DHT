@@ -20,7 +20,8 @@ public class MyValue implements Serializable {
 		this.keysize = keysize;
 	}
 	
-	public MyValue(byte[] data) {
+	public MyValue(byte[] data, int keysize) {
+		this.keysize = keysize;
 		this.setData(data);
 	}
 	
@@ -40,7 +41,14 @@ public class MyValue implements Serializable {
 			md = MessageDigest.getInstance("SHA-1");
 			byte[] bla = md.digest(data);
 			
-			this.key = ByteBuffer.wrap(bla).getLong() % (long)Math.pow(2, keysize);
+			
+			long key = ByteBuffer.wrap(bla).getLong() % (long)Math.pow(2, keysize);
+
+			if(key < 0) {
+				key += (long)Math.pow(2, keysize);
+			}
+			
+			this.key = key;
 			
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();

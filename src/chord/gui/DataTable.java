@@ -21,19 +21,25 @@ public class DataTable extends JTable {
 	
 	public DataTable() {
 		super();
+		
+		setListener();
 	}
 	
 	public DataTable(DataTableModel model) {
 		super(model);
-		DataTable.myModel = model;
 		
+		DataTable.myModel = model;
+		setListener();
+	}
+	
+	private void setListener() {
 		this.addMouseListener(new MouseAdapter() {
 
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				DataTable.selectedIndex = rowAtPoint(e.getPoint());
-				long id = (long)myModel.getValueAt(selectedIndex, 0);
-				Set<MyValue> values = myModel.getValues(id);
+				long id = (long)getModel().getValueAt(selectedIndex, 0);
+				Set<MyValue> values = ((DataTableModel)getModel()).getValues(id);
 				TableView.getValueTable().setModel(new ValueTableModel(values));
 				super.mouseClicked(e);
 			}

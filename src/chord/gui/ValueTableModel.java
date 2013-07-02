@@ -41,7 +41,7 @@ public class ValueTableModel extends AbstractTableModel {
 		
 		for (MyValue value : values) {
 			if (i == row) {
-				return value.getData();
+				return new String(value.getData());
 			}
 			
 			i++;

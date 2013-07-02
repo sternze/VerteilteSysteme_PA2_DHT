@@ -1,5 +1,6 @@
 package chord.data;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -8,8 +9,13 @@ import java.util.TreeMap;
 
 import chord.utils.ChordUtils;
 
-public class Entries {
+public class Entries implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
 	private Map<Long, Set<MyValue>> entries = null;
 
 	/**
@@ -65,7 +71,7 @@ public class Entries {
 	 * Removes the given entry from the local hash table.
 	 * 
 	 */
-	void remove(MyValue entryToRemove) {
+	public void remove(MyValue entryToRemove) {
 		
 		if (entryToRemove == null) {
 			NullPointerException e = new NullPointerException(
@@ -152,7 +158,7 @@ public class Entries {
 	/**
 	 * Removes the given entries from the local hash table.
 	 */
-	void removeAll(Set<MyValue> toRemove) {
+	public void removeAll(Set<MyValue> toRemove) {
 
 		if (toRemove == null) {
 			NullPointerException e = new NullPointerException(

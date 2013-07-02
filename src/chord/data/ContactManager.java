@@ -59,15 +59,18 @@ public class ContactManager {
 	}
 	
 	public static IMyChord get(Node node) {
+		if (node == null) {
+			return null;
+		}
+		
 		IMyChord contact = null;
 		
 		if (!contains(node.getIdentifier())) {
 			try {
 				contact = (IMyChord) Naming.lookup("rmi://" + node.getIp() + ":" + node.getPort() + "/" + node.getServiceName());
-			
+				
 				contacts.put(node.getIdentifier(), new ChordContact(contact));
-			} catch (MalformedURLException | RemoteException
-					| NotBoundException e) {
+			} catch (MalformedURLException | RemoteException | NotBoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

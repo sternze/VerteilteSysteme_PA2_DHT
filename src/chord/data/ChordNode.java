@@ -30,20 +30,17 @@ public class ChordNode extends Node implements Serializable {
 	public ChordNode(String ip, int port, String serviceName, int keySize) {
 		super(ip, port, serviceName, keySize);
 		
-		System.out.println(new Date() + " created me {");
-		System.out.println(new Date() + " \t IP: " + getIp());
-		System.out.println(new Date() + " \t Port: " + getPort());
-		System.out.println(new Date() + " \t ServiceName: " + getServiceName());
-		System.out.println(new Date() + " \t ChordIdentifier: " + getIdentifier());
-		System.out.println(new Date() + " }");
-		
-		this.fingerTable = new FingerTable(this);
+		init();
 	}
 	
 	public ChordNode(long manualId, String ip, int port, String serviceName, int keySize) {
 		super(ip, port, serviceName, keySize);
-		setIdentifier(manualId);
 		
+		setIdentifier(manualId);
+		init();
+	}
+	
+	private void init() {
 		System.out.println(new Date() + " created me {");
 		System.out.println(new Date() + " \t IP: " + getIp());
 		System.out.println(new Date() + " \t Port: " + getPort());
@@ -52,6 +49,7 @@ public class ChordNode extends Node implements Serializable {
 		System.out.println(new Date() + " }");
 		
 		this.fingerTable = new FingerTable(this);
+		this.entries = new Entries();
 	}
 	
 	public void create() {
@@ -160,13 +158,15 @@ public class ChordNode extends Node implements Serializable {
 		try {
 			IMyChord contact = ContactManager.get(contactNode);
         	
-			if(isSuccessor) {
-				ret = contact.getCurrentSuccessor();
-			} else {
-				ret = contact.getCurrentPredecessor();
+			if (contact != null) {
+				if(isSuccessor) {
+					ret = contact.getCurrentSuccessor();
+				} else {
+					ret = contact.getCurrentPredecessor();
+				}
+	      
+	        	contact = null;
 			}
-      
-        	contact = null;
 		} catch (RemoteException e) { 
 			e.printStackTrace();
 		}
@@ -272,6 +272,10 @@ public class ChordNode extends Node implements Serializable {
 	
 	public List<Node> getSuccessors() {
 		return this.successors;
+	}
+	
+	public String getIdAndEntryCount() {
+		return getIdentifier() + " (" + entries.getNumberOfStoredEntries() + ")";
 	}
 	
 	public void insertEntry_ChordInternal(MyValue toInsert, boolean includeReplicas) {

@@ -151,7 +151,18 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 			}
  		};
  		
+ 		Transformer<Long, String> vertexLabel = new Transformer<Long, String>() {
+
+			@Override
+			public String transform(Long id) {
+				return nodes.get(id).getIdAndEntryCount();
+			}
+ 		};
+ 		
+ 		
+ 		
  		vv.getRenderContext().setEdgeStrokeTransformer(edgePaint);
+ 		vv.getRenderContext().setVertexLabelTransformer(vertexLabel);
         
         graphView.getContentPane().remove(vv); 
         graphView.getContentPane().add(vv); 
