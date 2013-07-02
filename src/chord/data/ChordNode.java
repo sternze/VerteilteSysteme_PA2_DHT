@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -286,21 +285,15 @@ public class ChordNode extends Node implements Serializable {
 		// create set containing this entry for insertion of replicates at all
 		// nodes in successor list
 		if(includeReplicas) {
-			Set<MyValue> newEntries = new HashSet<MyValue>();
-			newEntries.add(toInsert);
-	
-			// invoke insertReplicates method on all nodes in successor list
-			final Set<MyValue> mustBeFinal = new HashSet<MyValue>(newEntries);
-			for (final Node successor : this.getSuccessors()) {
-				new Thread(new Runnable() {
-					public void run() {
-						try {
-							// TODO: create RMI call "insertReplicas" on successor.
-						} catch (Exception e) {
-							// do nothing
-						}
-					}
-				}).start();
+			try {
+				IMyChord successor = ContactManager.get(getSuccessor());
+				IMyChord predecessor = ContactManager.get(getPredecessor());
+				
+				successor.insertEntry_ChordInternal(toInsert, false);
+				predecessor.insertEntry_ChordInternal(toInsert, false);
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}
@@ -341,23 +334,17 @@ public class ChordNode extends Node implements Serializable {
 		this.entries.remove(entryToRemove);
 
 		if(deleteReplicas) {
-			// create set containing this entry for removal of replicates at all
-			// nodes in successor list
-			final Set<MyValue> entriesToRemove = new HashSet<MyValue>();
-			entriesToRemove.add(entryToRemove);
-	
-			// invoke removeReplicates method on all nodes in successor list
-			List<Node> successors = getSuccessors();
-			for (final Node successor : successors) {
-				new Thread(new Runnable() {
-					public void run() {
-						try {
-							// TODO: create RMI call "deleteReplicas" on successor.
-						} catch (Exception e) {
-							// do nothing
-						}
-					}
-				}).start();
+			if(deleteReplicas) {
+				try {
+					IMyChord successor = ContactManager.get(getSuccessor());
+					IMyChord predecessor = ContactManager.get(getPredecessor());
+					
+					successor.removeEntry_ChordInternal(entryToRemove, false);
+					predecessor.removeEntry_ChordInternal(entryToRemove, false);
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 	}
