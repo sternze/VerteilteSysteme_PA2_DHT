@@ -274,7 +274,7 @@ public class ChordNode extends Node implements Serializable {
 	}
 	
 	public String getIdAndEntryCount() {
-		return getIdentifier() + " (" + entries.getNumberOfStoredEntries() + ")";
+		return "(" + entries.getNumberOfStoredEntries() + ") " + getIdentifier();
 	}
 	
 	public void insertEntry_ChordInternal(MyValue toInsert, boolean includeReplicas) {

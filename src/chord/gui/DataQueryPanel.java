@@ -1,22 +1,28 @@
 package chord.gui;
 
-import javax.swing.JPanel;
-
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.util.Set;
 
-import javax.swing.JLabel;
-import javax.swing.JTextField;
 import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 
+import chord.MyChord;
 import chord.data.ChordNode;
+import chord.data.MyValue;
+import chord.interfaces.IMyChord;
 import chord.interfaces.INotifyableComponent;
-
-import java.awt.Color;
 
 public class DataQueryPanel extends JPanel implements INotifyableComponent  {
 
@@ -78,9 +84,37 @@ public class DataQueryPanel extends JPanel implements INotifyableComponent  {
 			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				String Query = tfQuery.getText();
+				IMyChord contact = getContact();
+				String q = tfQuery.getText();
+				MyValue query = new MyValue(q.getBytes(), MyChord.KEYLENGTH);
+				Set<MyValue> results = null;
+				
+				try {
+					results = contact.query(query.getId());
+					
+					if (results != null && results.size() > 0) {
+						for (MyValue r : results) {
+							System.out.println(new String(r.getData()));
+						}
+					}
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
+	}
+	
+	private IMyChord getContact() {
+		try {
+			IMyChord contact = (IMyChord) Naming.lookup("rmi://" + tfIP.getText() + ":" + tfPort.getText() + "/" + tfServiceName.getText());
+			
+			return contact;
+		} catch (MalformedURLException | RemoteException | NotBoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		return null;
 	}
 
 	@Override
