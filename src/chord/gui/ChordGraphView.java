@@ -3,6 +3,8 @@ package chord.gui;
 import java.awt.BasicStroke;
 import java.awt.Dimension;
 import java.awt.Stroke;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -13,6 +15,9 @@ import java.util.Date;
 import java.util.TreeMap;
 
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 
 import org.apache.commons.collections15.Transformer;
 
@@ -35,9 +40,14 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 	public static final String GRAPH_VIEW_SERVICE_NAME = "Graph_View_Service_Name";
 	public static final int GRAPH_VIEW_PORT = 7998;
 	
-	private static BasicVisualizationServer<Long,String> vv;
 	private static JFrame graphView;
 	private static TableView tableView;
+	private static JMenuBar menuBar;
+	private static JMenu view;
+	private static JMenuItem miTableView;
+	private static JMenuItem miDataControl;
+	
+	private static BasicVisualizationServer<Long,String> vv;
 	private static CircleLayout<Long, String> layout;	
 	private static Graph<Long, String> g;
 	private static TreeMap<Long, ChordNode> nodes;
@@ -79,9 +89,34 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 	        graphView.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	        graphView.setVisible(true);  
 	        
-	        tableView = new TableView("TableView", nodes);
-	        tableView.setVisible(true);
-	        tableView.pack();
+	        menuBar = new JMenuBar();
+	        view = new JMenu("View");
+	        miTableView = new JMenuItem("Table view");
+	        miDataControl = new JMenuItem("Data control");
+	        
+	        view.add(miTableView);
+	        view.add(miDataControl);
+	        menuBar.add(view);
+	        graphView.setJMenuBar(menuBar);
+	        
+	        miTableView.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					tableView = new TableView("TableView", nodes);
+			        tableView.setVisible(true);
+			        tableView.pack();
+				}
+			});
+	        
+	        miDataControl.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					// TODO Auto-generated method stub
+					
+				}
+			});
 	        
 	        float dash[] = { 10.0f };
 			final Stroke edgeStroke = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f);
@@ -148,7 +183,9 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
     		       	
     		nodes.put(node.getIdentifier(), node);
     		     	
-    		tableView.getNodesTable().setModel(new NodesTableModel(nodes));
+    		if (tableView != null && tableView.isVisible()) {
+    			tableView.getNodesTable().setModel(new NodesTableModel(nodes));
+    		}
 		}
     }
 
