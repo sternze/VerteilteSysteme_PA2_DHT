@@ -14,6 +14,7 @@ public interface IMyChord extends Remote {
 	public void notify(Node node) throws RemoteException;
 	public void notifyPredecessor(Node node) throws RemoteException;
 	public void insertData(MyValue data, boolean createReplicas) throws RemoteException;
+	public void insertData(Set<MyValue> data, boolean createReplicas) throws RemoteException;
 	public void insertEntry_ChordInternal(MyValue data, boolean createReplicas) throws RemoteException;
 	public void removeData(MyValue data, boolean deleteReplicas) throws RemoteException;
 	public void removeEntry_ChordInternal(MyValue data, boolean deleteReplicas) throws RemoteException;

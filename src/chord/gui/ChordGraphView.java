@@ -100,11 +100,17 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 				
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					tableView = new TableView("TableView", nodes);
-			        tableView.setVisible(true);
-			        tableView.pack();
+					if (!tableView.isVisible()) {
+						tableView = new TableView("TableView", nodes);
+				        tableView.setVisible(true);
+				        tableView.pack();
+					}
 				}
 			});
+	        
+	        tableView = new TableView("TableView", nodes);
+	        tableView.setVisible(true);
+	        tableView.pack();
 	        
 	        float dash[] = { 10.0f };
 			final Stroke edgeStroke = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash, 0.0f);
@@ -179,7 +185,7 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 
 	@Override
 	public void pushStatus(ChordNode node) throws RemoteException {
-		System.out.println(new Date() + " got push from " + node.getIdentifier());
+		//System.out.println(new Date() + " got push from " + node.getIdentifier());
 		
 		updateNodes(node);
 	}

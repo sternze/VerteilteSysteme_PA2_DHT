@@ -38,7 +38,7 @@ public class ContactManager {
 							contacts.remove(contact);
 						}
 						
-						System.out.println(new Date() + " removed " + toRemove.size() + " contacts, left: " + contacts.size());
+						//System.out.println(new Date() + " removed " + toRemove.size() + " contacts, left: " + contacts.size());
 					}
 					
 					try {

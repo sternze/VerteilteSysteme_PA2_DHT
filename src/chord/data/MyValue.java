@@ -56,6 +56,6 @@ public class MyValue implements Serializable {
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		} 
-		System.out.println("Key calculated and set");
+		//System.out.println("Key calculated and set");
 	}
 }
