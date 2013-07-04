@@ -6,5 +6,5 @@ import java.rmi.RemoteException;
 import chord.data.ChordNode;
 
 public interface IChordGraphView extends Remote {
-	public void pushStatus(ChordNode node) throws RemoteException;
+	public void registerChordNode(IChordNode node) throws RemoteException;
 }

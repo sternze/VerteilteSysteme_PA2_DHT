@@ -10,7 +10,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 
-import chord.data.ChordNode;
+import chord.interfaces.IChordNode;
 
 public class TableView extends JFrame {
 	/**
@@ -25,7 +25,7 @@ public class TableView extends JFrame {
 	private static DataInsertPanel dataInsertPanel;
 	private static DataQueryPanel dataQueryPanel;
 
-	public TableView(String title, TreeMap<Long, ChordNode> nodes) {
+	public TableView(String title, TreeMap<Long, IChordNode> nodes) {
 		super(title);
 
 		getContentPane().setPreferredSize(new Dimension(900, 600));

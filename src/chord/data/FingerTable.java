@@ -1,6 +1,7 @@
 package chord.data;
 
 import java.io.Serializable;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 
 public class FingerTable implements Serializable {
@@ -12,11 +13,11 @@ public class FingerTable implements Serializable {
 	
 	private ArrayList<FingerTableEntry> fingerTable;
 	
-	public FingerTable(Node me) {
+	public FingerTable(ChordNode chordNode) throws RemoteException {
 		this.fingerTable = new ArrayList<FingerTableEntry>();
 		
-		for (int i = 0; i < me.getKeySize(); i++) {
-			this.fingerTable.add(new FingerTableEntry(i, me));
+		for (int i = 0; i < chordNode.getKeySize(); i++) {
+			this.fingerTable.add(new FingerTableEntry(i, chordNode));
 		}
 	}
 	

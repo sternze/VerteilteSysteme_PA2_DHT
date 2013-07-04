@@ -4,7 +4,7 @@ import java.util.TreeMap;
 
 import javax.swing.table.AbstractTableModel;
 
-import chord.data.ChordNode;
+import chord.interfaces.IChordNode;
 
 public class NodesTableModel extends AbstractTableModel {
 
@@ -13,11 +13,11 @@ public class NodesTableModel extends AbstractTableModel {
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	private TreeMap<Long, ChordNode> nodes;
+	private TreeMap<Long, IChordNode> nodes;
 	
 	public NodesTableModel() { }
 	
-	public NodesTableModel(TreeMap<Long, ChordNode> nodes) {
+	public NodesTableModel(TreeMap<Long, IChordNode> nodes) {
 		this.nodes = nodes;
 	}
 	
@@ -39,9 +39,13 @@ public class NodesTableModel extends AbstractTableModel {
 	public Object getValueAt(int row, int col) {
 		int i = 0;
 		
-		for (ChordNode node : nodes.values()) {
+		for (IChordNode node : nodes.values()) {
 			if (i == row) {
-				return node.getIdentifier();
+				try {
+					return node.getIdentifier();
+				} catch(Exception ex) {
+					// do nothing
+				}
 			}
 			
 			i++;
@@ -50,7 +54,7 @@ public class NodesTableModel extends AbstractTableModel {
 		return null;
 	}
 	
-	public ChordNode getChordNode(long id) {
+	public IChordNode getChordNode(long id) {
 		return nodes.get(id);
 	}
 

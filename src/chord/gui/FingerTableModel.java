@@ -53,24 +53,28 @@ public class FingerTableModel extends AbstractTableModel {
 	@Override
 	public Object getValueAt(int row, int col) {
 		FingerTableEntry fte = fingerTable.get(row);
-		
-		switch (col) {
-			case 0:
-				return fte.getIndex();
-			case 1:
-				return fte.getStart();
-			case 2:
-				return fte.getIntervalLowerRange();
-			case 3:
-				return fte.getIntervalUpperRange();
-			case 4:
-				return fte.getNode() != null ? fte.getNode().getIdentifier() : null;
-			case 5:
-				return fte.getSuccessor() != null ? fte.getSuccessor().getIdentifier() : null;
-			case 6:
-				return fte.getPredecessor() != null ? fte.getPredecessor().getIdentifier() : null;
-			default:
-				return null;
+		try {
+			switch (col) {
+				case 0:
+					return fte.getIndex();
+				case 1:
+					return fte.getStart();
+				case 2:
+					return fte.getIntervalLowerRange();
+				case 3:
+					return fte.getIntervalUpperRange();
+				case 4:
+					return fte.getNode() != null ? fte.getNode().getIdentifier() : null;
+				case 5:
+					return fte.getSuccessor() != null ? fte.getSuccessor().getIdentifier() : null;
+				case 6:
+					return fte.getPredecessor() != null ? fte.getPredecessor().getIdentifier() : null;
+				default:
+					return null;
+			}
+		} catch(Exception ex) {
+			ex.printStackTrace();
 		}
+		return null;
 	}
 }

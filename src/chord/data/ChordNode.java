@@ -1,16 +1,22 @@
 package chord.data;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import chord.interfaces.IChordNode;
 import chord.interfaces.IMyChord;
 import chord.utils.ChordUtils;
 
-public class ChordNode extends Node implements Serializable {
+public class ChordNode extends UnicastRemoteObject implements Serializable, IChordNode {
 
 	/**
 	 * 
@@ -22,24 +28,122 @@ public class ChordNode extends Node implements Serializable {
 	private Entries entries;
 	
 	private int nextEntry = 0;
+	private String ip;
+	private String serviceName;
+	private int port;
+	private int keySize;
+	private long identifier;
+	private IChordNode successor;
+	private IChordNode predecessor;
 	
-	// This list stores information about replicas.
-	private List<Node> successors = new ArrayList<Node>();
-	
-	public ChordNode(String ip, int port, String serviceName, int keySize) {
-		super(ip, port, serviceName, keySize);
-		
+	public ChordNode(String ip, int port, String serviceName, int keySize) throws RemoteException {
+		this.ip = ip;
+		this.port = port;
+		this.serviceName = serviceName;
+		this.keySize = keySize;
+		this.identifier = calculateChordId(ip + ":" + port);
 		init();
 	}
+
+	public IChordNode getPredecessor() {
+		return predecessor;
+	}
+
+	public void setPredecessor(IChordNode predecessor) {
+		this.predecessor = predecessor;
+	}
+
+	public String getIp() {
+		return ip;
+	}
+
+	public String getServiceName() {
+		return serviceName;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public int getKeySize() {
+		return keySize;
+	}
+
+	public long getIdentifier() {
+		return identifier;
+	}
 	
-	public ChordNode(long manualId, String ip, int port, String serviceName, int keySize) {
-		super(ip, port, serviceName, keySize);
+	public void setIdentifier(long identifier) {
+		this.identifier = identifier;
+	}
+
+	private long calculateChordId(String IpAndPort) {
+		long chordID = 0;
+		
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("SHA-1");
+			byte[] bla = md.digest(IpAndPort.getBytes());
+			
+			long number = ByteBuffer.wrap(bla).getLong();
+			
+			long mod = (long)Math.pow(2, keySize);
+			
+			chordID = number % mod;
+			if(chordID < 0) {
+				chordID += (long)Math.pow(2, keySize);
+			}
+			
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		
+		return chordID;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) (identifier ^ (identifier >>> 32));
+		result = prime * result + ((ip == null) ? 0 : ip.hashCode());
+		result = prime * result + port;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ChordNode other = (ChordNode) obj;
+		if (identifier != other.getIdentifier())
+			return false;
+		if (ip == null) {
+			if (other.getIp() != null)
+				return false;
+		} else if (!ip.equals(other.getIp()))
+			return false;
+		if (port != other.getPort())
+			return false;
+		return true;
+	}
+	
+	
+	// This list stores information about replicas.
+	private List<IChordNode> successors = new ArrayList<IChordNode>();
+	
+	public ChordNode(long manualId, String ip, int port, String serviceName, int keySize) throws RemoteException {
+		this(ip, port, serviceName, keySize);
 		
 		setIdentifier(manualId);
 		init();
 	}
 	
-	private void init() {
+	private void init() throws RemoteException {
 		System.out.println(new Date() + " created me {");
 		System.out.println(new Date() + " \t IP: " + getIp());
 		System.out.println(new Date() + " \t Port: " + getPort());
@@ -53,59 +157,72 @@ public class ChordNode extends Node implements Serializable {
 	
 	public void create() {
 		setPredecessor(null);
-		setSuccessor(new Node(this));
+		setSuccessor(this);
 		
 		System.out.println(new Date() + " i'm the first one");
 	}
 	
-	public void join(Node nodeToJoin) {
+	public void join(IChordNode nodeToJoin) throws RemoteException {
+		
+		if(nodeToJoin instanceof ChordNode) {
+			nodeToJoin = getInterfaceObjectFromRealObject(nodeToJoin);
+		}
+		
 		System.out.println(new Date() + " joining node: " + nodeToJoin.getIdentifier());
 		
 		setPredecessor(null);
 
 		try {
-			IMyChord contact = ContactManager.get(nodeToJoin);
-        	
-			Node node = contact.findSuccessor(getIdentifier());
-
-        	contact = null;
-
+			IChordNode node = nodeToJoin.findSuccessor(getIdentifier());
+			
 			setSuccessor(node);
         	
-        	IMyChord contact1 = ContactManager.get(node);
-        	
-        	Set<MyValue> migratableValues = contact1.migrateDataAfterJoin(node);
-        	
-        	for(MyValue myVal : migratableValues) {
-        		this.entries.add(myVal);
+        	if(node != null) {
+        		Set<MyValue> migratableValues = node.migrateDataAfterJoin(this);
+        		
+        		for(MyValue myVal : migratableValues) {
+        			this.entries.add(myVal);
+        		}
+        		System.out.println(new Date() + " my successor is: " + node.getIdentifier());
         	}
 			
-			System.out.println(new Date() + " my successor is: " + node.getIdentifier());
 		
 		} catch (RemoteException e) { 
 			e.printStackTrace();
 		}
 	}
 	
-	public Node findSuccessor(long id) {
-		Node predecessor = findPredecessor(id);
-		Node retVal = getNodeOfOtherNode(predecessor, true);
+	private IChordNode getInterfaceObjectFromRealObject(IChordNode nodeToJoin) {
+		try {
+			IMyChord contact = (IMyChord)Naming.lookup("rmi://" + nodeToJoin.getIp() + ":" + nodeToJoin.getPort() + "/" + nodeToJoin.getServiceName());
+			
+			return contact.getRemoteChordNodeObject();
+		} catch (Exception ex) {
+			
+		}
+		return null;
+	}
+
+	public IChordNode findSuccessor(long id) {
+		IChordNode retVal = null;
+		try {
+			IChordNode predecessor = findPredecessor(id);
+			retVal = predecessor.getSuccessor();
+		} catch(Exception ex) {
+			
+		}
 		
 		return retVal;
 	}
 	
-	public Node findPredecessor(long id) {
-		Node node = this;
+	public IChordNode findPredecessor(long id) throws RemoteException{
+		IChordNode node = this;
 		while (!ChordUtils.inRangeLeftOpenIntervall(id, node.getIdentifier(), node.getSuccessor().getIdentifier())) {
 			if (node.getIdentifier() == getIdentifier()) {
 				node = closestPrecedingFinger(id);
 			} else {
 				try {
-					IMyChord contact = ContactManager.get(node);
-		        	
-					node = contact.closestPrecedingFinger(id);
-					
-		        	contact = null;
+					node = node.closestPrecedingFinger(id);
 				} catch (RemoteException e) { 
 					e.printStackTrace();
 				}
@@ -115,7 +232,7 @@ public class ChordNode extends Node implements Serializable {
 		return node;
 	}
 	
-	public Node closestPrecedingFinger(long id) {
+	public IChordNode closestPrecedingFinger(long id) throws RemoteException {
 		for (int i = fingerTable.size() - 1; i >= 0; i--) {
 			if (fingerTable.get(i).getNode() != null && ChordUtils.inRangeOpenIntervall(fingerTable.get(i).getNode().getIdentifier(), getIdentifier(), id)) {
 				return fingerTable.get(i).getNode();
@@ -125,9 +242,9 @@ public class ChordNode extends Node implements Serializable {
 		return this;
 	}
 	
-	public void stabilize() {
+	public void stabilize() throws RemoteException {
 		
-		Node node = getNodeOfOtherNode(getSuccessor(), false);
+		IChordNode node = getSuccessor().getPredecessor();
 		
 		if (node != null) {
 			if (ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getIdentifier(), getSuccessor().getIdentifier())) {
@@ -136,66 +253,33 @@ public class ChordNode extends Node implements Serializable {
 		}
 		
 		if (getSuccessor() != null && getSuccessor().getIdentifier() != getIdentifier()) {
-			Node successor = getSuccessor();
+			IChordNode successor = getSuccessor();
 			
 			try {
-				IMyChord contact = ContactManager.get(successor);
-				
-				contact.notify(new Node(this));
-	      
-	        	contact = null;
+				successor.notify(this);
 			} catch (RemoteException e) { 
 				e.printStackTrace();
 			}
 		}
 	}
 	
-	// gets either the successor or the predecessor of the contact node.
-	private Node getNodeOfOtherNode(Node contactNode, boolean isSuccessor) {
-		Node ret = null;
-		
+	public void notify(IChordNode node) {
+		//System.out.println(new Date() + " got notfication from: " + node.getIdentifier());
 		try {
-			IMyChord contact = ContactManager.get(contactNode);
-        	
-			if (contact != null) {
-				if(isSuccessor) {
-					ret = contact.getCurrentSuccessor();
-				} else {
-					ret = contact.getCurrentPredecessor();
-				}
-	      
-	        	contact = null;
+			if (getPredecessor() == null) {
+				setPredecessor(node);
+			} else if (ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getPredecessor().getIdentifier(), getIdentifier())) {
+				getPredecessor().notifyPredecessor(node);
+				setPredecessor(node);
+			} else if(node.getIdentifier() == getPredecessor().getIdentifier()) {
+				setPredecessor(node);
 			}
 		} catch (RemoteException e) { 
 			e.printStackTrace();
 		}
-		
-		return ret;
 	}
 	
-	public void notify(Node node) {
-		//System.out.println(new Date() + " got nitfication from: " + node.getIdentifier());
-		
-		if (getPredecessor() == null) {
-			setPredecessor(node);
-		} else if (ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getPredecessor().getIdentifier(), getIdentifier())) {
-			try {
-				IMyChord contact = ContactManager.get(node);				
-				
-				setPredecessor(node);
-				contact.notifyPredecessor(node);
-	      
-	        	contact = null;
-			} catch (RemoteException e) { 
-				e.printStackTrace();
-			}
-		} else if(node.getIdentifier() == getPredecessor().getIdentifier()) {
-			setPredecessor(node);
-		}
-		
-	}
-	
-	public void notifyPredecessor(Node node) {
+	public void notifyPredecessor(IChordNode node) throws RemoteException {
 		if (getSuccessor() == null || ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getIdentifier(), getSuccessor().getIdentifier())) {
 			setSuccessor(node);
 		}
@@ -203,7 +287,7 @@ public class ChordNode extends Node implements Serializable {
 	
 	public void fixFingers() {
 		//System.out.println(new Date() + " (" + me.getIdentifier() + ") fix fingers: start(" + fingerTable.get(i).getStart() + ")");
-		Node node = findSuccessor(fingerTable.get(nextEntry).getStart());
+		IChordNode node = findSuccessor(fingerTable.get(nextEntry).getStart());
 		
 		if (nextEntry == 0) {
 			setSuccessor(node);
@@ -218,7 +302,7 @@ public class ChordNode extends Node implements Serializable {
 		}
 	}
 	
-	public void printStatus() {
+	public void printStatus() throws RemoteException {
 		String s = new Date() + " me: " + getIdentifier() + " successor: "; 
 		s += getSuccessor() == null ? "null" : getSuccessor().getIdentifier();
 		s += " predecessor: ";
@@ -242,22 +326,22 @@ public class ChordNode extends Node implements Serializable {
 	}
 	
 	@Override
-	public Node getSuccessor() {
-		if (super.getSuccessor() == null) {
-			super.setSuccessor(fingerTable.get(0).getNode());
+	public IChordNode getSuccessor() {
+		if (this.successor == null) {
+			this.successor = fingerTable.get(0).getNode();
 		}
 		
-		return super.getSuccessor();
+		return this.successor;
 	}
 	
-	public void setSuccessor(Node node) {
+	public void setSuccessor(IChordNode node) {
 		if(fingerTable != null) {
 			fingerTable.get(0).setNode(node);
 		}
-		super.setSuccessor(node);
+		this.successor = node;
 	}
 	
-	public Node getMe() {
+	public IChordNode getMe() {
 		return this;
 	}
 	
@@ -269,7 +353,7 @@ public class ChordNode extends Node implements Serializable {
 		return entries;
 	}
 	
-	public List<Node> getSuccessors() {
+	public List<IChordNode> getSuccessors() {
 		return this.successors;
 	}
 	
@@ -277,7 +361,7 @@ public class ChordNode extends Node implements Serializable {
 		return "(" + entries.getNumberOfStoredEntries() + ") " + getIdentifier();
 	}
 	
-	public void insertEntry_ChordInternal(MyValue toInsert, boolean includeReplicas) {
+	public void insertEntry(MyValue toInsert, boolean includeReplicas) {
 		
 		// add entry to local repository
 		this.entries.add(toInsert);
@@ -285,12 +369,11 @@ public class ChordNode extends Node implements Serializable {
 		// create set containing this entry for insertion of replicates at all
 		// nodes in successor list
 		if(includeReplicas) {
-			try {
-				IMyChord successor = ContactManager.get(getSuccessor());
-				IMyChord predecessor = ContactManager.get(getPredecessor());
-				
-				successor.insertEntry_ChordInternal(toInsert, false);
-				predecessor.insertEntry_ChordInternal(toInsert, false);
+			try {				
+				getSuccessor().insertEntry(toInsert, false);
+				if(getPredecessor() != null) {
+					getPredecessor().insertEntry(toInsert, false);
+				}
 			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -308,16 +391,12 @@ public class ChordNode extends Node implements Serializable {
 		boolean inserted = false;
 		while (!inserted) {
 			// find successor of id
-			Node responsibleNode = this.findSuccessor(entryToInsert.getId());
+			IChordNode responsibleNode = this.findSuccessor(entryToInsert.getId());
 
 			// invoke insertEntry method
 			try {
 				try {
-					IMyChord contact = ContactManager.get(responsibleNode);
-		        	
-					contact.insertEntry_ChordInternal(entryToInsert, createReplicas);
-					
-		        	contact = null;
+					responsibleNode.insertEntry(entryToInsert, createReplicas);
 				} catch (RemoteException e) { 
 					e.printStackTrace();
 				}
@@ -328,19 +407,18 @@ public class ChordNode extends Node implements Serializable {
 		}
 	}
 	
-	public void removeEntry_ChordInternal(MyValue entryToRemove, boolean deleteReplicas) {
+	public void removeEntry(MyValue entryToRemove, boolean deleteReplicas) {
 
 		// remove entry from repository
 		this.entries.remove(entryToRemove);
 
 		if(deleteReplicas) {
 			if(deleteReplicas) {
-				try {
-					IMyChord successor = ContactManager.get(getSuccessor());
-					IMyChord predecessor = ContactManager.get(getPredecessor());
-					
-					successor.removeEntry_ChordInternal(entryToRemove, false);
-					predecessor.removeEntry_ChordInternal(entryToRemove, false);
+				try {					
+					getSuccessor().removeEntry(entryToRemove, false);
+					if(getPredecessor() != null) {
+						getPredecessor().removeEntry(entryToRemove, false);
+					}
 				} catch (RemoteException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -361,20 +439,14 @@ public class ChordNode extends Node implements Serializable {
 		while (!removed) {
 
 			// find successor of id
-			Node responsibleNode;
+			IChordNode responsibleNode;
 			responsibleNode = findSuccessor(entryToDelete.getId());
 
 			
 			// invoke removeEntry method
 			try {
 				try {
-					IMyChord contact = ContactManager.get(responsibleNode);
-		        	
-					
-					contact.insertEntry_ChordInternal(entryToDelete, deleteReplicas);
-					
-		      
-		        	contact = null;
+					responsibleNode.removeEntry(entryToDelete, deleteReplicas);
 				} catch (RemoteException e) { 
 					e.printStackTrace();
 				}
@@ -385,25 +457,17 @@ public class ChordNode extends Node implements Serializable {
 		}
 	}
 
-	public void leave() {
+	public void leave() throws RemoteException {
 		//network was not created yet.
 		if(getSuccessor().getIdentifier() == getIdentifier() && getPredecessor() == null) {
 			return;
 		}
 		
-		Node successor = getSuccessor();
-		Node pred = getPredecessor();
+		IChordNode successor = getSuccessor();
+		IChordNode pred = getPredecessor();
 		if (successor != null && pred != null) {
 			try {
-				IMyChord contact = ContactManager.get(successor);
-	        	
-				if(pred instanceof ChordNode) {
-					pred = new Node((ChordNode)pred);
-				}
-				
-				contact.leavesNetwork(pred);
-	      
-	        	contact = null;
+				successor.leavesNetwork(pred);
 			} catch (RemoteException e) { 
 				e.printStackTrace();
 			}
@@ -416,18 +480,14 @@ public class ChordNode extends Node implements Serializable {
 		boolean retrieved = false;
 		while (!retrieved) {
 			// find successor of id
-			Node responsibleNode = null;
+			IChordNode responsibleNode = null;
 
 			responsibleNode = findSuccessor(id);
 
 			// invoke retrieveEntry method
 			try {
 				try {
-					IMyChord contact = ContactManager.get(responsibleNode);
-		        	
-					result = contact.queryData_ChordInternal(id);
-				
-		        	contact = null;
+					responsibleNode.queryData(id);
 				} catch (RemoteException e) { 
 					e.printStackTrace();
 				}
@@ -442,13 +502,18 @@ public class ChordNode extends Node implements Serializable {
 
 	}
 	
-	public Set<MyValue> queryData_ChordInternal(long id) {
+	public Set<MyValue> queryData(long id) {
 		return this.entries.getEntries(id);
 	}
 
-	public Set<MyValue> migrateDataAfterJoin(Node potentialPredecessor) {
+	public Set<MyValue> migrateDataAfterJoin(IChordNode potentialPredecessor) throws RemoteException {
 		Set<MyValue> copiedEntries = this.entries.getEntriesInInterval(potentialPredecessor.getIdentifier(), getIdentifier());
 
 		return copiedEntries;
+	}
+
+	@Override
+	public void leavesNetwork(IChordNode newPredecessor) throws RemoteException {
+		setPredecessor(newPredecessor);
 	}
 }

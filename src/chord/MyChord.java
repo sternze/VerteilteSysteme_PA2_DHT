@@ -12,9 +12,9 @@ import java.util.Set;
 
 import chord.data.ChordNode;
 import chord.data.MyValue;
-import chord.data.Node;
 import chord.gui.ChordGraphView;
 import chord.interfaces.IChordGraphView;
+import chord.interfaces.IChordNode;
 import chord.interfaces.IMyChord;
 import chord.utils.MyChordUtils;
 
@@ -78,7 +78,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 			if (args.length >= 3 && !args[2].equals("${NodeIP:Port}") && !args[2].equals("1:1")) {
 				ConnectionURI = args[2];
 							
-				me.join(new Node(ConnectionURI.split(":")[0], Integer.parseInt(ConnectionURI.split(":")[1]), ServiceName, KEYLENGTH));      	
+				me.join(new ChordNode(ConnectionURI.split(":")[0], Integer.parseInt(ConnectionURI.split(":")[1]), ServiceName, KEYLENGTH));      	
 			} else {
 				me.create();
 			}
@@ -90,12 +90,12 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 					System.out.println(new Date() + " stabilize thread started");
 					
 					while (true) {
-						me.stabilize();
-						
-						System.gc();
 						try {
+							me.stabilize();
+							
+							System.gc();
 							Thread.sleep(1000);
-						} catch (InterruptedException e) {
+						} catch (InterruptedException | RemoteException e) {
 							e.printStackTrace();
 						}
 					}
@@ -128,11 +128,11 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 					System.out.println(new Date() + " printStatus thread started");
 					
 					while (true) {
-						me.printStatus();
 						
 						try {
+							me.printStatus();
 							Thread.sleep(5000);
-						} catch (InterruptedException e) {
+						} catch (InterruptedException | RemoteException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
@@ -140,42 +140,19 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 				}
 			};
 			
-			Thread sendStatus = new Thread() {
-				
-				@Override
-				public void run() {
-					System.out.println(new Date() + " sendStatus thread started");
-					
-					while (true) {
-						if (graphViewContact == null) {
-							try {
-								graphViewContact = (IChordGraphView) Naming.lookup("rmi://" + GraphViewConnectionURI + "/" + ChordGraphView.GRAPH_VIEW_SERVICE_NAME);
-							} catch (MalformedURLException | RemoteException | NotBoundException e) { 
-								e.printStackTrace();
-							}
-						}
-						
-						try {
-							graphViewContact.pushStatus(me);
-						} catch (RemoteException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
-						
-						try {
-							Thread.sleep(2000);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
+			if (graphViewContact == null) {
+				try {
+					graphViewContact = (IChordGraphView) Naming.lookup("rmi://" + GraphViewConnectionURI + "/" + ChordGraphView.GRAPH_VIEW_SERVICE_NAME);
+				} catch (MalformedURLException | RemoteException | NotBoundException e) { 
+					e.printStackTrace();
 				}
-			};
+			}
+
+			graphViewContact.registerChordNode(me);
 			
 			stabilize.start();
 			fixFingers.start();
 			//printStatus.start();
-			sendStatus.start();
 			
 		} catch (RemoteException e) {
 			System.out.println(new Date() + " Error: " + e);
@@ -213,45 +190,28 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 	}
 
 	@Override
-	public Node findSuccessor(long id) throws RemoteException {
-		Node n = me.findSuccessor(id);
-		
-		if(n instanceof ChordNode) {
-			return new Node((ChordNode)n);
-		} else {
-			return n;
-		}
+	public IChordNode findSuccessor(long id) throws RemoteException {
+		return me.findSuccessor(id);
 	}
 
 	@Override
-	public Node findPredecessor(long id) throws RemoteException {
-		Node n = me.findPredecessor(id);
-		
-		if(n instanceof ChordNode) {
-			return new Node((ChordNode)n);
-		} else {
-			return n;
-		}
+	public IChordNode findPredecessor(long id) throws RemoteException {
+		return me.findPredecessor(id);
+
 	}
 
 	@Override
-	public Node closestPrecedingFinger(long id) throws RemoteException {
-		Node n = me.closestPrecedingFinger(id);
-		
-		if(n instanceof ChordNode) {
-			return new Node((ChordNode)n);
-		} else {
-			return n;
-		}
+	public IChordNode closestPrecedingFinger(long id) throws RemoteException {
+		return me.closestPrecedingFinger(id);
 	}
 	
 	@Override
-	public void notify(Node node) throws RemoteException {
+	public void notify(IChordNode node) throws RemoteException {
 		me.notify(node);
 	}
 
 	@Override
-	public void notifyPredecessor(Node node) throws RemoteException {
+	public void notifyPredecessor(IChordNode node) throws RemoteException {
 		me.notifyPredecessor(node);
 	}
 
@@ -261,50 +221,10 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 	}
 
 	@Override
-	public void insertEntry_ChordInternal(MyValue data, boolean createReplicas)
-			throws RemoteException {
-		me.insertEntry_ChordInternal(data, createReplicas);
-	}
-
-	@Override
-	public Node getCurrentPredecessor() throws RemoteException {
-		Node n = me.getPredecessor();
-		
-		if(n instanceof ChordNode) {
-			return new Node((ChordNode)n);
-		} else {
-			return n;
-		}
-	}
-
-	@Override
-	public Node getCurrentSuccessor() throws RemoteException {
-		Node n = me.getSuccessor();
-		
-		if(n instanceof ChordNode) {
-			return new Node((ChordNode)n);
-		} else {
-			return n;
-		}
-	}
-
-	@Override
 	public void removeData(MyValue data, boolean deleteReplicas)
 			throws RemoteException {
 		me.removeData(data, deleteReplicas);
 		
-	}
-
-	@Override
-	public void removeEntry_ChordInternal(MyValue data, boolean deleteReplicas)
-			throws RemoteException {
-		me.removeEntry_ChordInternal(data, deleteReplicas);
-		
-	}
-
-	@Override
-	public void leavesNetwork(Node newPredecessor) throws RemoteException {
-		me.setPredecessor(newPredecessor);
 	}
 
 	@Override
@@ -318,14 +238,21 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 	}
 
 	@Override
-	public Set<MyValue> queryData_ChordInternal(long id) throws RemoteException {
-		return me.queryData_ChordInternal(id);
+	public Set<MyValue> migrateDataAfterJoin(IChordNode potentialPredecessor) throws RemoteException {
+		return me.migrateDataAfterJoin(potentialPredecessor);
 	}
 
 	@Override
-	public Set<MyValue> migrateDataAfterJoin(Node potentialPredecessor) throws RemoteException {
-		return me.migrateDataAfterJoin(potentialPredecessor);
+	public void insertData(Set<MyValue> data, boolean createReplicas)
+			throws RemoteException {
+		// TODO Auto-generated method stub
+		for(MyValue dat : data) {
+			me.insertData(dat, createReplicas);
+		}
 	}
-	
-	
+
+	@Override
+	public IChordNode getRemoteChordNodeObject() throws RemoteException {
+		return me;
+	}
 }

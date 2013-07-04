@@ -4,7 +4,7 @@ call ant clean
 call ant build
 
 
-set countOfNodes=20
+set countOfNodes=10
 
 set MyIp=192.168.43.213
 

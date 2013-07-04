@@ -19,8 +19,8 @@ import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 
 import chord.MyChord;
-import chord.data.ChordNode;
 import chord.data.MyValue;
+import chord.interfaces.IChordNode;
 import chord.interfaces.IMyChord;
 import chord.interfaces.INotifyableComponent;
 
@@ -121,10 +121,14 @@ public class DataQueryPanel extends JPanel implements INotifyableComponent  {
 	public void notifyComponent() {
 		if (parent.getClass() == NodesTable.class) {
 			NodesTable nt = (NodesTable) parent;
-			ChordNode current = nt.getSelectedValue();
-			tfIP.setText(current.getIp());
-			tfPort.setText(current.getPort() + "");
-			tfServiceName.setText(current.getServiceName());
+			IChordNode current = nt.getSelectedValue();
+			try {
+				tfIP.setText(current.getIp());
+				tfPort.setText(current.getPort() + "");
+				tfServiceName.setText(current.getServiceName());
+			} catch (Exception ex) {
+				// do noting
+			}
 		}
 	}
 }

@@ -2,6 +2,9 @@ package chord.data;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.rmi.RemoteException;
+
+import chord.interfaces.IChordNode;
 
 public class FingerTableEntry implements Serializable {
 	/**
@@ -13,18 +16,18 @@ public class FingerTableEntry implements Serializable {
 	private long start;
 	private long intervalLowerBound;
 	private long intervalUpperBound;
-	private Node owner;
-	private Node node;
+	private IChordNode owner;
+	private IChordNode node;
 	
-	public FingerTableEntry(int index, Node owner) { 
+	public FingerTableEntry(int index, ChordNode chordNode) throws RemoteException { 
 		this.index = index;
-		this.owner = owner;
+		this.owner = chordNode;
 		this.start = calculateStart(this.index);
 		this.intervalLowerBound = this.start;
 		this.intervalUpperBound = calculateStart(this.index + 1);
 	}
 
-	private long calculateStart(int index) {
+	private long calculateStart(int index) throws RemoteException{
 		BigInteger modulus = new BigInteger("2").pow(owner.getKeySize());
 		BigInteger offset = new BigInteger("2").pow(index);
 		BigInteger start = new BigInteger(owner.getIdentifier() + "").add(offset).mod(modulus);
@@ -48,23 +51,23 @@ public class FingerTableEntry implements Serializable {
 		return intervalUpperBound;
 	}
 
-	public Node getNode() {
+	public IChordNode getNode() {
 		return node;
 	}
 	
-	public synchronized void setNode(Node node) {
+	public synchronized void setNode(IChordNode node) {
 		this.node = node;
 	}
 	
-	public Node getOwner() {
+	public IChordNode getOwner() {
 		return this.owner;
 	}
 
-	public Node getSuccessor() {
+	public IChordNode getSuccessor() throws RemoteException {
 		return this.node.getSuccessor();
 	}
 
-	public Node getPredecessor() {
+	public IChordNode getPredecessor() throws RemoteException {
 		return this.node.getSuccessor();
 	}
 }

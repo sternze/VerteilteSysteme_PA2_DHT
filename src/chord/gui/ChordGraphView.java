@@ -22,8 +22,8 @@ import javax.swing.JMenuItem;
 import org.apache.commons.collections15.Transformer;
 
 import chord.data.ChordNode;
-import chord.data.Node;
 import chord.interfaces.IChordGraphView;
+import chord.interfaces.IChordNode;
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.Graph;
@@ -49,7 +49,7 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 	private static BasicVisualizationServer<Long,String> vv;
 	private static CircleLayout<Long, String> layout;	
 	private static Graph<Long, String> g;
-	private static TreeMap<Long, ChordNode> nodes;
+	private static TreeMap<Long, IChordNode> nodes;
 	private static Transformer<String, Stroke> edgePaint;
 	private static Transformer<Long, String> vertexLabel;
 	
@@ -57,7 +57,7 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
     public ChordGraphView() throws RemoteException {
         // Graph<V, E> where V is the type of the vertices and E is the type of the edges
         g = new DirectedSparseMultigraph<Long, String>();   
-        nodes = new TreeMap<Long, ChordNode>();
+        nodes = new TreeMap<Long, IChordNode>();
     }
     
 
@@ -126,7 +126,12 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 
 				@Override
 				public String transform(Long id) {
-					return nodes.get(id).getIdAndEntryCount();
+					try {
+						return nodes.get(id).getIdAndEntryCount();
+					}catch (Exception ex) {
+						// do nothing
+					}
+					return null;
 				}
 	 		};
 	 		
@@ -169,27 +174,24 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 		}      
     }
  
-    public void updateNodes(ChordNode node) {
-    	synchronized (nodes) {
-    		if (nodes.containsKey(node.getIdentifier())) {
-    			nodes.remove(node.getIdentifier());
-    		}
-    		       	
-    		nodes.put(node.getIdentifier(), node);
-    		     	
-    		if (tableView != null && tableView.isVisible()) {
-    			tableView.getNodesTable().setModel(new NodesTableModel(nodes));
-    		}
-		}
+    public void updateNodes(IChordNode node) {
+    	try {
+	    	synchronized (nodes) {
+	    		if (nodes.containsKey(node.getIdentifier())) {
+	    			nodes.remove(node.getIdentifier());
+	    		}
+	    		       	
+	    		nodes.put(node.getIdentifier(), node);
+	    		     	
+	    		if (tableView != null && tableView.isVisible()) {
+	    			tableView.getNodesTable().setModel(new NodesTableModel(nodes));
+	    		}
+			}
+    	} catch (Exception ex) {
+    		// do nothing
+    	}
     }
-
-	@Override
-	public void pushStatus(ChordNode node) throws RemoteException {
-		//System.out.println(new Date() + " got push from " + node.getIdentifier());
-		
-		updateNodes(node);
-	}
-	
+    
 	private static void repaint() {
 		System.gc();
 		
@@ -207,22 +209,25 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 					}
 				}
 				
-				for (Node node: nodes.values()) {
-					if (!g.containsVertex(node.getIdentifier())) {
-						g.addVertex(node.getIdentifier());
+				try {
+					for (IChordNode node: nodes.values()) {
+						if (!g.containsVertex(node.getIdentifier())) {
+							g.addVertex(node.getIdentifier());
+						}
 					}
-				}
-				
-				for (Node node: nodes.values()) {
-					if (node.getSuccessor() != null && g.containsVertex(node.getSuccessor().getIdentifier())) {
-						g.removeEdge(node.getIdentifier() + "successor");
-						g.addEdge(node.getIdentifier() + "successor", node.getIdentifier(), node.getSuccessor().getIdentifier());
+					for (IChordNode node: nodes.values()) {
+						if (node.getSuccessor() != null && g.containsVertex(node.getSuccessor().getIdentifier())) {
+							g.removeEdge(node.getIdentifier() + "successor");
+							g.addEdge(node.getIdentifier() + "successor", node.getIdentifier(), node.getSuccessor().getIdentifier());
+						}
+						
+						if (node.getPredecessor() != null && g.containsVertex(node.getPredecessor().getIdentifier())) {
+							g.removeEdge(node.getIdentifier() + "predecessor");
+							g.addEdge(node.getIdentifier() + "predecessor", node.getIdentifier(), node.getPredecessor().getIdentifier());
+						}
 					}
-					
-					if (node.getPredecessor() != null && g.containsVertex(node.getPredecessor().getIdentifier())) {
-						g.removeEdge(node.getIdentifier() + "predecessor");
-						g.addEdge(node.getIdentifier() + "predecessor", node.getIdentifier(), node.getPredecessor().getIdentifier());
-					}
+				} catch (Exception ex) {
+					// do nothing
 				}
 				
 				layout = new CircleLayout<Long, String>(g);
@@ -242,5 +247,11 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 		        graphView.pack();
 			}
 		}
+	}
+
+
+	@Override
+	public void registerChordNode(IChordNode node) throws RemoteException {
+		updateNodes(node);
 	}
 }

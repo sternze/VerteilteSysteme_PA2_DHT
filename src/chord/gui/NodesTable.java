@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import javax.swing.JTable;
 import javax.swing.table.TableModel;
 
-import chord.data.ChordNode;
+import chord.interfaces.IChordNode;
 import chord.interfaces.INotifyableComponent;
 
 public class NodesTable extends JTable {
@@ -37,9 +37,13 @@ public class NodesTable extends JTable {
 			public void mouseClicked(MouseEvent e) {
 				NodesTable.selectedIndex = rowAtPoint(e.getPoint());
 				long id = (long)myModel.getValueAt(selectedIndex, 0);
-				ChordNode node = myModel.getChordNode(id);
-				TableView.getFingerTable().setModel(new FingerTableModel(node.getFingerTable()));
-				TableView.getDataTable().setModel(new DataTableModel(node.getEntries()));
+				IChordNode node = myModel.getChordNode(id);
+				try {
+					TableView.getFingerTable().setModel(new FingerTableModel(node.getFingerTable()));
+					TableView.getDataTable().setModel(new DataTableModel(node.getEntries()));
+				} catch (Exception ex) {
+					// do nothing
+				}
 				super.mouseClicked(e);
 				
 				for (INotifyableComponent comp : observer) {
@@ -68,7 +72,7 @@ public class NodesTable extends JTable {
 		observer.remove(component);
 	}
 	
-	public ChordNode getSelectedValue() {
+	public IChordNode getSelectedValue() {
 		return myModel.getChordNode((long)getValueAt(selectedIndex, 0));
 	}
 }
