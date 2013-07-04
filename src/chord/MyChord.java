@@ -38,6 +38,7 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 	private static String ConnectionURI = "";
 	private static String GraphViewConnectionURI = "";
 	private static long manualId = -1;
+	private static boolean Task3 = false;
 	
 	protected MyChord() throws RemoteException {
 		super();
@@ -50,9 +51,13 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 		} else {
 			ServiceName = DEFAULT_SERVICE_NAME;
 		}
-		
+
 		if (args.length >= 4 && !args[3].equals("${manualID}")) {
 			manualId = Long.parseLong(args[3]);
+		}
+
+		if (args.length >= 5 && !args[4].equals("${replicateData}")) {
+			Task3 = Boolean.parseBoolean(args[4]);
 		}
 		
 		Registry reg = establishRegistry(); 
@@ -64,21 +69,31 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 			System.out.println(new Date() + " Registered with registry");
 			
 			if (manualId == -1) {
-				me = new ChordNode(MyChordUtils.getIPAdressOfNic("net4"), port, ServiceName, KEYLENGTH);
+				me = new ChordNode(MyChordUtils.getIPAdressOfNic("net4"), port, ServiceName, KEYLENGTH, Task3);
 			} else {
-				me = new ChordNode(manualId, MyChordUtils.getIPAdressOfNic("net4"), port, ServiceName, KEYLENGTH);
+				me = new ChordNode(manualId, MyChordUtils.getIPAdressOfNic("net4"), port, ServiceName, KEYLENGTH, Task3);
 			}
 			
 			if (args.length >= 2 && !args[1].equals("${GraphViewIP:Port}")) {
 				GraphViewConnectionURI = args[1];
+
+				if (graphViewContact == null) {
+					try {
+						graphViewContact = (IChordGraphView) Naming.lookup("rmi://" + GraphViewConnectionURI + "/" + ChordGraphView.GRAPH_VIEW_SERVICE_NAME);
+					} catch (MalformedURLException | RemoteException | NotBoundException e) { 
+						e.printStackTrace();
+					}
+				}
+
+				graphViewContact.registerChordNode(me);
 			} else {
-				GraphViewConnectionURI = MyChordUtils.getIPAdressOfNic("net4") + ":" + ChordGraphView.GRAPH_VIEW_PORT;
+				//GraphViewConnectionURI = MyChordUtils.getIPAdressOfNic("net4") + ":" + ChordGraphView.GRAPH_VIEW_PORT;
 			}
 			
 			if (args.length >= 3 && !args[2].equals("${NodeIP:Port}") && !args[2].equals("1:1")) {
 				ConnectionURI = args[2];
 							
-				me.join(new ChordNode(ConnectionURI.split(":")[0], Integer.parseInt(ConnectionURI.split(":")[1]), ServiceName, KEYLENGTH));      	
+				me.join(new ChordNode(ConnectionURI.split(":")[0], Integer.parseInt(ConnectionURI.split(":")[1]), ServiceName, KEYLENGTH, Task3));      	
 			} else {
 				me.create();
 			}
@@ -121,37 +136,53 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 				}
 			};
 			
-			Thread printStatus = new Thread() {
+//			Thread printStatus = new Thread() {
+//				
+//				@Override
+//				public void run() {
+//					System.out.println(new Date() + " printStatus thread started");
+//					
+//					while (true) {
+//						
+//						try {
+//							me.printStatus();
+//							Thread.sleep(5000);
+//						} catch (InterruptedException | RemoteException e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						}
+//					}
+//				}
+//			};
+					
+			Thread successorMaintainer = new Thread() {
 				
 				@Override
 				public void run() {
-					System.out.println(new Date() + " printStatus thread started");
+					System.out.println(new Date() + " maintaining successor list");
 					
 					while (true) {
 						
 						try {
-							me.printStatus();
+							if(me.getSuccessor() != null) {
+								ChordNode.successors[1] = me.getSuccessor().getSuccessor();
+								ChordNode.successors[2] = me.getSuccessor().getSuccessor().getSuccessor();
+//								System.out.println("first succ: " + me.getSuccessor().getIdentifier());
+//								System.out.println("second succ: " + me.getSuccessor().getSuccessor().getIdentifier());
+//								System.out.println("third succ: " + me.getSuccessor().getSuccessor().getSuccessor().getIdentifier());
+							}
 							Thread.sleep(5000);
 						} catch (InterruptedException | RemoteException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+							// stays empty
 						}
 					}
 				}
 			};
 			
-			if (graphViewContact == null) {
-				try {
-					graphViewContact = (IChordGraphView) Naming.lookup("rmi://" + GraphViewConnectionURI + "/" + ChordGraphView.GRAPH_VIEW_SERVICE_NAME);
-				} catch (MalformedURLException | RemoteException | NotBoundException e) { 
-					e.printStackTrace();
-				}
-			}
-
-			graphViewContact.registerChordNode(me);
 			
 			stabilize.start();
 			fixFingers.start();
+			successorMaintainer.start();
 			//printStatus.start();
 			
 		} catch (RemoteException e) {
@@ -190,41 +221,13 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 	}
 
 	@Override
-	public IChordNode findSuccessor(long id) throws RemoteException {
-		return me.findSuccessor(id);
+	public void insertData(MyValue data) throws RemoteException {
+		me.insertData(data);
 	}
 
 	@Override
-	public IChordNode findPredecessor(long id) throws RemoteException {
-		return me.findPredecessor(id);
-
-	}
-
-	@Override
-	public IChordNode closestPrecedingFinger(long id) throws RemoteException {
-		return me.closestPrecedingFinger(id);
-	}
-	
-	@Override
-	public void notify(IChordNode node) throws RemoteException {
-		me.notify(node);
-	}
-
-	@Override
-	public void notifyPredecessor(IChordNode node) throws RemoteException {
-		me.notifyPredecessor(node);
-	}
-
-	@Override
-	public void insertData(MyValue data, boolean createReplicas) throws RemoteException {
-		me.insertData(data, createReplicas);
-	}
-
-	@Override
-	public void removeData(MyValue data, boolean deleteReplicas)
-			throws RemoteException {
-		me.removeData(data, deleteReplicas);
-		
+	public void removeData(MyValue data) throws RemoteException {
+		me.removeData(data);
 	}
 
 	@Override
@@ -237,17 +240,12 @@ public class MyChord extends UnicastRemoteObject implements IMyChord {
 		return me.query(id);
 	}
 
-	@Override
-	public Set<MyValue> migrateDataAfterJoin(IChordNode potentialPredecessor) throws RemoteException {
-		return me.migrateDataAfterJoin(potentialPredecessor);
-	}
 
 	@Override
-	public void insertData(Set<MyValue> data, boolean createReplicas)
-			throws RemoteException {
+	public void insertData(Set<MyValue> data) throws RemoteException {
 		// TODO Auto-generated method stub
 		for(MyValue dat : data) {
-			me.insertData(dat, createReplicas);
+			me.insertData(dat);
 		}
 	}
 

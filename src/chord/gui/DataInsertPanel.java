@@ -24,7 +24,6 @@ import java.util.Set;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -51,7 +50,6 @@ public class DataInsertPanel extends JPanel implements INotifyableComponent {
 	private JTextField tfIP;
 	private JTextField tfPort;
 	private JTextField tfServiceName;
-	private JCheckBox cbMakeReplication;
 	private JRadioButton rdbSingleInsert;
 	private JRadioButton rdbListInsert;
 	private final JFileChooser fc;
@@ -111,17 +109,16 @@ public class DataInsertPanel extends JPanel implements INotifyableComponent {
 				IMyChord contact = getContact();
 				String value = tfValue.getText();
 				String[] words = value.split(" ");
-				boolean makeReplication = cbMakeReplication.isSelected();
 				MyValue myValue = new MyValue(value.getBytes(), MyChord.KEYLENGTH);
 				
 				if (rdbSingleInsert.isSelected()) {
 					try {
-						contact.insertData(myValue, makeReplication);
+						contact.insertData(myValue);
 						
 						for (String word : words) {
 							myValue = new MyValue(word.getBytes(), MyChord.KEYLENGTH);
 							myValue.setData(value.getBytes());
-							contact.insertData(myValue, makeReplication);
+							contact.insertData(myValue);
 						}
 					} catch (RemoteException e) {
 						// TODO Auto-generated catch block
@@ -138,7 +135,7 @@ public class DataInsertPanel extends JPanel implements INotifyableComponent {
 					}
 					
 					try {
-						contact.insertData(values, makeReplication);
+						contact.insertData(values);
 					} catch (RemoteException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -151,9 +148,6 @@ public class DataInsertPanel extends JPanel implements INotifyableComponent {
 		
 		JPanel panel_1 = new JPanel();
 		add(panel_1);
-		
-		cbMakeReplication = new JCheckBox("replicate");
-		panel_1.add(cbMakeReplication);
 		
 		JButton btnChooseFile = new JButton("Choose File");
 		panel_1.add(btnChooseFile);
@@ -242,7 +236,7 @@ public class DataInsertPanel extends JPanel implements INotifyableComponent {
 						            	
 					            	try {
 										for (MyValue v : data) {
-											contact.insertData(v, cbMakeReplication.isSelected());
+											contact.insertData(v);
 										}
 									} catch (RemoteException e1) {
 										// TODO Auto-generated catch block

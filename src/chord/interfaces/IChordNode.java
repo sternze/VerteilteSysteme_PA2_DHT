@@ -21,11 +21,15 @@ public interface IChordNode extends Remote {
 	public Set<MyValue> migrateDataAfterJoin(IChordNode potentialPredecessor) throws RemoteException;
 	public Set<MyValue> queryData(long id) throws RemoteException;
 	public void leavesNetwork(IChordNode newPredecessor) throws RemoteException;
-	public void removeEntry(MyValue data, boolean deleteReplicas) throws RemoteException;
-	public void insertEntry(MyValue data, boolean createReplicas) throws RemoteException;
+	public void removeEntry(MyValue data) throws RemoteException;
+	public void insertEntry(MyValue data) throws RemoteException;
+	public void addReplica(MyValue data) throws RemoteException;
+	public void removeReplica(MyValue data) throws RemoteException;
+	public Entries getAllReplicas() throws RemoteException;
 	public void notify(IChordNode chordNode) throws RemoteException;
 	public String getIp() throws RemoteException;
 	public int getPort() throws RemoteException;
 	public String getServiceName() throws RemoteException;
 	public String getIdAndEntryCount() throws RemoteException;
+	public void ping() throws RemoteException;
 }

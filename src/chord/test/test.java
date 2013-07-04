@@ -25,7 +25,7 @@ public class test {
 		IChordNode node = null;
 		IMyChord entryPoint = null;
 		try {
-			node = new ChordNode("192.168.1.102", 8000, "PA2_MyKV", 3);
+			node = new ChordNode("192.168.1.102", 8000, "PA2_MyKV", 3, false);
 			entryPoint = (IMyChord) Naming.lookup("rmi://" + node.getIp() + ":" + node.getPort() + "/" + node.getServiceName());
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -35,9 +35,9 @@ public class test {
 		MyValue data1 = new MyValue(new String("du").getBytes(), 3);
 		MyValue data2 = new MyValue(new String("da").getBytes(), 3);
 		try {
-			entryPoint.insertData(data, true);
-			entryPoint.insertData(data1, true);
-			entryPoint.insertData(data2, true);
+			entryPoint.insertData(data);
+			entryPoint.insertData(data1);
+			entryPoint.insertData(data2);
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -7,9 +7,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 
 import chord.interfaces.IChordNode;
@@ -24,8 +22,9 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 	private static final long serialVersionUID = 1L;
 	
 	private FingerTable fingerTable;
-	
+
 	private Entries entries;
+	private Entries replicas;
 	
 	private int nextEntry = 0;
 	private String ip;
@@ -33,15 +32,18 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 	private int port;
 	private int keySize;
 	private long identifier;
-	private IChordNode successor;
+	// This list stores information about replicas.
+	public static IChordNode[] successors = new IChordNode[] { null, null, null };
 	private IChordNode predecessor;
+	private boolean replicateData;
 	
-	public ChordNode(String ip, int port, String serviceName, int keySize) throws RemoteException {
+	public ChordNode(String ip, int port, String serviceName, int keySize, boolean isTask3) throws RemoteException {
 		this.ip = ip;
 		this.port = port;
 		this.serviceName = serviceName;
 		this.keySize = keySize;
 		this.identifier = calculateChordId(ip + ":" + port);
+		this.replicateData = isTask3;
 		init();
 	}
 
@@ -133,11 +135,9 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 	}
 	
 	
-	// This list stores information about replicas.
-	private List<IChordNode> successors = new ArrayList<IChordNode>();
 	
-	public ChordNode(long manualId, String ip, int port, String serviceName, int keySize) throws RemoteException {
-		this(ip, port, serviceName, keySize);
+	public ChordNode(long manualId, String ip, int port, String serviceName, int keySize, boolean isTask3) throws RemoteException {
+		this(ip, port, serviceName, keySize, isTask3);
 		
 		setIdentifier(manualId);
 		init();
@@ -150,9 +150,11 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 		System.out.println(new Date() + " \t ServiceName: " + getServiceName());
 		System.out.println(new Date() + " \t ChordIdentifier: " + getIdentifier());
 		System.out.println(new Date() + " }");
-		
+				
 		this.fingerTable = new FingerTable(this);
 		this.entries = new Entries();
+		this.replicas = new Entries();
+
 	}
 	
 	public void create() {
@@ -243,26 +245,50 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 	}
 	
 	public void stabilize() throws RemoteException {
+		IChordNode node = null;
+		try {
+			node = getSuccessor().getPredecessor();
 		
-		IChordNode node = getSuccessor().getPredecessor();
 		
-		if (node != null) {
-			if (ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getIdentifier(), getSuccessor().getIdentifier())) {
-				setSuccessor(node);
+			if (node != null) {
+				if (ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getIdentifier(), getSuccessor().getIdentifier())) {
+					setSuccessor(node);
+				}
 			}
-		}
-		
-		if (getSuccessor() != null && getSuccessor().getIdentifier() != getIdentifier()) {
-			IChordNode successor = getSuccessor();
 			
-			try {
-				successor.notify(this);
-			} catch (RemoteException e) { 
-				e.printStackTrace();
+			if (getSuccessor() != null && getSuccessor().getIdentifier() != getIdentifier()) {
+				IChordNode successor = getSuccessor();
+				
+				try {
+					successor.notify(this);
+				} catch (RemoteException e) { 
+					e.printStackTrace();
+				}
 			}
+		} catch(Exception ex) {
+			successorDiedMakeReconnect(0);
 		}
 	}
 	
+	private void successorDiedMakeReconnect(int i) {
+		System.out.println("Successor " + i + " died trying to make a reconnect.");
+		if(i+1 < successors.length) {
+			IChordNode succ = successors[i+1];
+			try {
+				System.out.println("Sending a ping now to " + i+1);
+				succ.ping();
+				System.out.println("Ping finished.");
+				setSuccessor(succ);
+				succ.notify(this);
+				System.out.println("Successor set.");
+			} catch (Exception ex) {
+				successorDiedMakeReconnect(i+1);
+			}
+		} else {
+			System.out.println("Too many successors died.");
+		}
+	}
+
 	public void notify(IChordNode node) {
 		//System.out.println(new Date() + " got notfication from: " + node.getIdentifier());
 		try {
@@ -274,14 +300,19 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 			} else if(node.getIdentifier() == getPredecessor().getIdentifier()) {
 				setPredecessor(node);
 			}
-		} catch (RemoteException e) { 
-			e.printStackTrace();
+		} catch (RemoteException e) {
+			setPredecessor(node);
 		}
 	}
 	
 	public void notifyPredecessor(IChordNode node) throws RemoteException {
-		if (getSuccessor() == null || ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getIdentifier(), getSuccessor().getIdentifier())) {
-			setSuccessor(node);
+		try {
+			if (getSuccessor() == null || ChordUtils.inRangeOpenIntervall(node.getIdentifier(), getIdentifier(), getSuccessor().getIdentifier())) {
+				setSuccessor(node);
+			}
+		} catch (RemoteException re) {
+			successorDiedMakeReconnect(0);
+			notifyPredecessor(node);
 		}
 	}
 	
@@ -327,18 +358,18 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 	
 	@Override
 	public IChordNode getSuccessor() {
-		if (this.successor == null) {
-			this.successor = fingerTable.get(0).getNode();
+		if (successors[0] == null) {
+			successors[0] = fingerTable.get(0).getNode();
 		}
 		
-		return this.successor;
+		return successors[0];
 	}
 	
 	public void setSuccessor(IChordNode node) {
 		if(fingerTable != null) {
 			fingerTable.get(0).setNode(node);
 		}
-		this.successor = node;
+		successors[0] = node;
 	}
 	
 	public IChordNode getMe() {
@@ -353,35 +384,35 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 		return entries;
 	}
 	
-	public List<IChordNode> getSuccessors() {
-		return this.successors;
+	public IChordNode[] getSuccessors() {
+		return successors;
 	}
 	
 	public String getIdAndEntryCount() {
 		return "(" + entries.getNumberOfStoredEntries() + ") " + getIdentifier();
 	}
 	
-	public void insertEntry(MyValue toInsert, boolean includeReplicas) {
+	public void insertEntry(MyValue toInsert) {
 		
 		// add entry to local repository
 		this.entries.add(toInsert);
 
 		// create set containing this entry for insertion of replicates at all
 		// nodes in successor list
-		if(includeReplicas) {
-			try {				
-				getSuccessor().insertEntry(toInsert, false);
+		if(replicateData) {
+			try {
+				getSuccessor().addReplica(toInsert);
 				if(getPredecessor() != null) {
-					getPredecessor().insertEntry(toInsert, false);
+					getPredecessor().addReplica(toInsert);
 				}
 			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				successorDiedMakeReconnect(0);
+				insertEntry(toInsert);
 			}
 		}
 	}
 	
-	public void insertData(MyValue entryToInsert, boolean createReplicas) {
+	public void insertData(MyValue entryToInsert) {
 		// check parameters
 		if (entryToInsert.getData() == null) {
 			throw new NullPointerException(
@@ -396,7 +427,7 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 			// invoke insertEntry method
 			try {
 				try {
-					responsibleNode.insertEntry(entryToInsert, createReplicas);
+					responsibleNode.insertEntry(entryToInsert);
 				} catch (RemoteException e) { 
 					e.printStackTrace();
 				}
@@ -407,27 +438,25 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 		}
 	}
 	
-	public void removeEntry(MyValue entryToRemove, boolean deleteReplicas) {
+	public void removeEntry(MyValue entryToRemove) {
 
 		// remove entry from repository
 		this.entries.remove(entryToRemove);
 
-		if(deleteReplicas) {
-			if(deleteReplicas) {
-				try {					
-					getSuccessor().removeEntry(entryToRemove, false);
-					if(getPredecessor() != null) {
-						getPredecessor().removeEntry(entryToRemove, false);
-					}
-				} catch (RemoteException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+		if(replicateData) {
+			try {					
+				getSuccessor().removeReplica(entryToRemove);
+				if(getPredecessor() != null) {
+					getPredecessor().removeReplica(entryToRemove);
 				}
+			} catch (RemoteException e) {
+				successorDiedMakeReconnect(0);
+				removeEntry(entryToRemove);
 			}
 		}
 	}
 	
-	public void removeData(MyValue entryToDelete, boolean deleteReplicas) {
+	public void removeData(MyValue entryToDelete) {
 
 		// check parameters
 		if (entryToDelete.getData() == null) {
@@ -446,7 +475,7 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 			// invoke removeEntry method
 			try {
 				try {
-					responsibleNode.removeEntry(entryToDelete, deleteReplicas);
+					responsibleNode.removeEntry(entryToDelete);
 				} catch (RemoteException e) { 
 					e.printStackTrace();
 				}
@@ -468,8 +497,9 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 		if (successor != null && pred != null) {
 			try {
 				successor.leavesNetwork(pred);
-			} catch (RemoteException e) { 
-				e.printStackTrace();
+			} catch (RemoteException e) {
+				successorDiedMakeReconnect(0);
+				leave();
 			}
 		}
 	}
@@ -508,6 +538,7 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 
 	public Set<MyValue> migrateDataAfterJoin(IChordNode potentialPredecessor) throws RemoteException {
 		Set<MyValue> copiedEntries = this.entries.getEntriesInInterval(potentialPredecessor.getIdentifier(), getIdentifier());
+		this.entries.removeAll(copiedEntries);
 
 		return copiedEntries;
 	}
@@ -515,5 +546,29 @@ public class ChordNode extends UnicastRemoteObject implements Serializable, ICho
 	@Override
 	public void leavesNetwork(IChordNode newPredecessor) throws RemoteException {
 		setPredecessor(newPredecessor);
+		if(replicateData) {
+			System.out.println("Replicating data to successor, after my former predecessor left.");
+			//TODO: implement this!!!
+		}
+	}
+
+	@Override
+	public void addReplica(MyValue data) throws RemoteException {
+		this.replicas.add(data);
+	}
+
+	@Override
+	public void removeReplica(MyValue data) throws RemoteException {
+		this.replicas.remove(data);
+	}
+
+	@Override
+	public Entries getAllReplicas() throws RemoteException {
+		return this.replicas;
+	}
+
+	@Override
+	public void ping() throws RemoteException {
+		// stays empty
 	}
 }

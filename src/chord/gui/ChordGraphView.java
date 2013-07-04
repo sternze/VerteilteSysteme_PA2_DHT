@@ -12,6 +12,8 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 import java.util.TreeMap;
 
 import javax.swing.JFrame;
@@ -21,7 +23,6 @@ import javax.swing.JMenuItem;
 
 import org.apache.commons.collections15.Transformer;
 
-import chord.data.ChordNode;
 import chord.interfaces.IChordGraphView;
 import chord.interfaces.IChordNode;
 import edu.uci.ics.jung.algorithms.layout.CircleLayout;
@@ -201,21 +202,61 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 			if (nodes.size() > 0) {
 				Collection<Long> vertices = (Collection<Long>) g.getVertices();
 				
-				for (Long id : vertices) {
-					if (!nodes.containsKey(id)) {
-						g.removeVertex(id);
-						g.removeEdge(id + "successor");
-						g.removeEdge(id + "predecessor");
+				Iterator<Long> nodeItr = nodes.keySet().iterator();
+				while(nodeItr.hasNext()) {
+					Long id = nodeItr.next();
+					try {
+						nodes.get(id).ping();
+					} catch (Exception ex) {
+						nodeItr.remove();
 					}
 				}
 				
-				try {
-					for (IChordNode node: nodes.values()) {
-						if (!g.containsVertex(node.getIdentifier())) {
-							g.addVertex(node.getIdentifier());
+				//TODO: Finish this part (visualize "fail" of node)
+				
+				synchronized(g) {
+					Iterator<Long> itr = g.getVertices().iterator();
+					while(itr.hasNext()) {
+						Long id = itr.next();
+						if (!nodes.containsKey(id)) {
+							g.removeVertex(id);
+							g.removeEdge(id + "successor");
+							g.removeEdge(id + "predecessor");
 						}
 					}
-					for (IChordNode node: nodes.values()) {
+				}
+				
+//				for (Long id : vertices) {
+//					if (!nodes.containsKey(id)) {
+//						g.removeVertex(id);
+//						g.removeEdge(id + "successor");
+//						g.removeEdge(id + "predecessor");
+//					}
+//				}
+
+				for(Long l : nodes.keySet()) {
+					try {
+						if(!g.containsVertex(nodes.get(l).getIdentifier())) {
+							g.addVertex(nodes.get(l).getIdentifier());
+						}
+					} catch (Exception ex) {
+						System.out.println("Node died during repaint.");
+					}
+				}
+//				for (IChordNode node: nodes.values()) {
+//					try {
+//						if (!g.containsVertex(node.getIdentifier())) {
+//							g.addVertex(node.getIdentifier());
+//						}
+//					} catch (Exception ex) {
+//						nodes.
+//						nodes.remove(node);
+//					}
+//				}
+				
+				for(Long l : nodes.keySet()) {
+					IChordNode node = nodes.get(l);
+					try {
 						if (node.getSuccessor() != null && g.containsVertex(node.getSuccessor().getIdentifier())) {
 							g.removeEdge(node.getIdentifier() + "successor");
 							g.addEdge(node.getIdentifier() + "successor", node.getIdentifier(), node.getSuccessor().getIdentifier());
@@ -225,10 +266,26 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 							g.removeEdge(node.getIdentifier() + "predecessor");
 							g.addEdge(node.getIdentifier() + "predecessor", node.getIdentifier(), node.getPredecessor().getIdentifier());
 						}
+					} catch (Exception ex) {
+						System.out.println("Node died during repaint.");
 					}
-				} catch (Exception ex) {
-					// do nothing
 				}
+				
+//				for (IChordNode node: nodes.values()) {
+//					try {
+//						if (node.getSuccessor() != null && g.containsVertex(node.getSuccessor().getIdentifier())) {
+//							g.removeEdge(node.getIdentifier() + "successor");
+//							g.addEdge(node.getIdentifier() + "successor", node.getIdentifier(), node.getSuccessor().getIdentifier());
+//						}
+//						
+//						if (node.getPredecessor() != null && g.containsVertex(node.getPredecessor().getIdentifier())) {
+//							g.removeEdge(node.getIdentifier() + "predecessor");
+//							g.addEdge(node.getIdentifier() + "predecessor", node.getIdentifier(), node.getPredecessor().getIdentifier());
+//						}
+//					} catch (Exception ex) {
+//						// do nothing
+//					}
+//				}
 				
 				layout = new CircleLayout<Long, String>(g);
 				layout.setVertexOrder(new ArrayList<Long>(nodes.keySet()));
@@ -251,7 +308,7 @@ public class ChordGraphView extends UnicastRemoteObject implements IChordGraphVi
 
 
 	@Override
-	public void registerChordNode(IChordNode node) throws RemoteException {
+	public synchronized void registerChordNode(IChordNode node) throws RemoteException {
 		updateNodes(node);
 	}
 }
